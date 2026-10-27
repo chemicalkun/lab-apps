@@ -1,3 +1,3 @@
 Windowsアプリ：Chromato BRO Windows/Chromato BRO.exe
-配布用ZIP：Chromato BRO Windows ver26.10.21.zip
+配布用ZIP：Chromato BRO Windows ver26.10.27.zip
 フォルダ全体で保管してください。

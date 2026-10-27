@@ -1,4 +1,4 @@
-Chromato BRO Windows 26.10.21
+Chromato BRO Windows 26.10.27
 Windows 11 / Intel・AMD（64ビット）
 
 1. ZIPを右クリックし「すべて展開」を選びます。
