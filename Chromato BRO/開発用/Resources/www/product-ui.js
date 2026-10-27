@@ -1,5 +1,8 @@
 (() => {
  const $=id=>document.getElementById(id);
+ // A wrapped macOS/Windows header must leave the full controls pane inside the viewport.
+ const header=document.querySelector('body>header');
+ if(header){const updateHeaderHeight=()=>document.documentElement.style.setProperty('--app-header-height',`${header.getBoundingClientRect().height}px`);new ResizeObserver(updateHeaderHeight).observe(header);window.addEventListener('resize',updateHeaderHeight);updateHeaderHeight();}
  let previousFocus=null;
  function showHelp(){previousFocus=document.activeElement;$('helpPanel').hidden=false;$('helpClose').focus();}
  function closeHelp(){$('helpPanel').hidden=true;previousFocus?.focus();}

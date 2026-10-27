@@ -5,11 +5,30 @@ private var smokeExportCount = 0
 private var smokeExports: [String: Data] = [:]
 extension GPCApplicationDelegate {
     func captureProductScreens(root: URL, index: Int = 0) {
-        let pages = [("analysis", "navAnalysis", 1280, 850), ("calibration", "navCalibration", 1280, 850), ("help", "helpOpen", 1280, 850), ("compact", "navGraph", 840, 600)]
+        let pages = [("analysis", "navAnalysis", 1280, 850), ("calibration", "navCalibration", 1280, 850), ("help", "helpOpen", 1280, 850), ("compact", "navGraph", 840, 600), ("analysis-short", "navAnalysis", 1280, 600), ("analysis-compact", "navAnalysis", 840, 600)]
         guard index < pages.count else { NSApp.terminate(nil); return }
         let (name, button, width, height) = pages[index]
         window.setContentSize(NSSize(width: width, height: height))
-        let script = "document.getElementById('helpClose').click();document.getElementById('\(button)').click();await new Promise(r=>setTimeout(r,150));if(document.documentElement.scrollWidth>innerWidth+1)throw Error('Horizontal overflow: \(name)');return true;"
+        let script = """
+        document.getElementById('helpClose').click();document.getElementById('\(button)').click();window.scrollTo(0,0);
+        await new Promise(r=>setTimeout(r,150));
+        if(document.documentElement.scrollWidth>innerWidth+1)throw Error('Horizontal overflow: \(name)');
+        if('\(button)'==='navAnalysis'){
+          const pane=document.querySelector('#analysisPage>aside'),cards=[...pane.children],box=pane.getBoundingClientRect();
+          if(getComputedStyle(pane).overflowY!=='auto'||pane.scrollHeight<=pane.clientHeight)throw Error('Analysis sidebar must scroll independently');
+          if(cards.some(c=>c.scrollHeight>c.clientHeight+1))throw Error('Analysis controls clipped inside shrinking cards');
+          if(box.bottom>innerHeight+1)throw Error('Sidebar extends beyond window');
+          const plot=document.getElementById('chromChart'),top=plot.getBoundingClientRect().top,bodyY=window.scrollY;
+          pane.scrollTop=pane.scrollHeight;await new Promise(r=>requestAnimationFrame(r));
+          const last=cards.at(-1).getBoundingClientRect(),bounds=pane.getBoundingClientRect();
+          if(last.top<bounds.top-1||last.bottom>bounds.bottom+1)throw Error('Last settings card cannot be reached');
+          if(Math.abs(plot.getBoundingClientRect().top-top)>1||window.scrollY!==bodyY)throw Error('Sidebar scroll moved analysis graph');
+          pane.scrollTop=0;await new Promise(r=>requestAnimationFrame(r));
+          const choose=document.getElementById('chooseFile').getBoundingClientRect(),first=cards[0].getBoundingClientRect();
+          if(choose.top<first.top||choose.bottom>first.bottom)throw Error('Import button clipped');
+        }
+        return true;
+        """
         webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { result in
             if case .failure(let error) = result { fputs("FAIL layout: \(error)\n", stderr); exit(1) }
             self.webView.takeSnapshot(with: nil) { image, error in

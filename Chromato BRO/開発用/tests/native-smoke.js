@@ -645,4 +645,3 @@ pass('Full initial/reset range, visible mode/style choices, image actions below 
  pass('Sub/sup selected formatting, inline double-click edit/preview/commit/cancel, compact auto fit and project/export round trip');
 }
 return log.join('\n');
-
