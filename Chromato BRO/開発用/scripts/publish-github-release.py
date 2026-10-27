@@ -8,9 +8,10 @@ def main():
     p=argparse.ArgumentParser(description='GitHub配布リリースを準備／公開します。秘密鍵や開発プロジェクトは公開しません。')
     p.add_argument('--repo',default='chemicalkun/chromato-bro-releases')
     p.add_argument('--notes',default='使い勝手と安定性を改善しました。')
+    p.add_argument('--distribution-zips',action='store_true',help='明示された場合だけ手動配布ZIPを更新する')
     p.add_argument('--publish',action='store_true',help='準備したアプリZIPと署名付き更新情報を一般公開する')
     args=p.parse_args()
-    subprocess.run([sys.executable,str(ROOT/'scripts/prepare-github-release.py'),'--repo',args.repo,'--notes',args.notes],check=True)
+    subprocess.run([sys.executable,str(ROOT/'scripts/prepare-github-release.py'),'--repo',args.repo,'--notes',args.notes]+(['--distribution-zips'] if args.distribution_zips else []),check=True)
     out=ROOT/'配布用更新情報/GitHub公開用';plan=json.loads((out/'release-plan.json').read_text())
     if not args.publish:
         print('準備のみ完了しました。公開する場合は --publish を付けて実行してください。');return
@@ -31,5 +32,10 @@ def main():
         if a.get('digest'):assert a['digest']=='sha256:'+hashlib.sha256(file.read_bytes()).hexdigest()
     payload=out/'publish-request.json';payload.write_text(json.dumps({'draft':False,'make_latest':'true'}))
     subprocess.run(['gh','api','--method','PATCH',f"repos/{args.repo}/releases/{release['id']}",'--input',str(payload),'--jq','.html_url'],check=True)
+    current=json.loads(gh('api',f'repos/{args.repo}/contents/README.md'))
+    import base64
+    request=out/'readme-request.json'
+    request.write_text(json.dumps({'message':f"Update release guide for {plan['tag']}",'sha':current['sha'],'content':base64.b64encode((out/'README.md').read_bytes()).decode()}))
+    subprocess.run(['gh','api','--method','PUT',f'repos/{args.repo}/contents/README.md','--input',str(request),'--jq','.content.html_url'],check=True)
     print('公開完了。固定の更新URL:',plan['feed_url'])
 if __name__=='__main__':main()

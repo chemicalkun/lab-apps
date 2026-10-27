@@ -1,5 +1,6 @@
 from pathlib import Path
-import shutil,zipfile,hashlib,json,struct,xml.etree.ElementTree as ET,os
+import shutil,zipfile,hashlib,json,struct,xml.etree.ElementTree as ET,os,argparse,sys
+parser=argparse.ArgumentParser();parser.add_argument('--distribution-zip',action='store_true');args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 out=root/'build/Chromato BRO Windows'
 for name in ['README.md','WINDOWS_CHECKLIST.md','VALIDATION.md','はじめに.txt','UPDATES.md','インストール手順.txt']:
@@ -23,6 +24,8 @@ version=ET.parse(root/'src/GPCAnalyzer.csproj').findtext('.//Version')
 build=int(ET.parse(root/'src/GPCAnalyzer.csproj').findtext('.//FileVersion').split('.')[-1])
 (out/'release-info.json').write_text(json.dumps({'version':version,'build':build}))
 assert version and len(version.split('.'))==3
+if not args.distribution_zip:
+ print('PASS: Windows runtime validated; manual distribution ZIP preserved');sys.exit(0)
 zip_path=root.parent/f'Chromato BRO Windows ver{version}.zip'
 temp_path=zip_path.with_suffix('.zip.tmp')
 with zipfile.ZipFile(temp_path,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:

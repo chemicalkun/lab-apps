@@ -1,3 +1,4 @@
+param([switch]$DistributionZip)
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $dist = Split-Path $root -Parent
@@ -27,6 +28,7 @@ try {
     Move-Item -LiteralPath $stage -Destination $out
     $fileVersion = ([xml](Get-Content $project -Raw)).Project.PropertyGroup.FileVersion | Where-Object { $_ }
     @{version=$version;build=[int]($fileVersion.Split('.')[-1])} | ConvertTo-Json | Set-Content (Join-Path $out 'release-info.json') -Encoding utf8
+    if ($DistributionZip) {
     $tempZip = Join-Path $root 'build/release.zip'
     Compress-Archive -LiteralPath $out -DestinationPath $tempZip -Force
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -38,6 +40,7 @@ try {
     }
     $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
     Set-Content -LiteralPath (Join-Path $root 'build/SHA256SUMS.txt') -Value ($hash + '  ' + (Split-Path $zip -Leaf)) -Encoding ascii
+    }
     Write-Host "Build complete: $out"
 } finally {
     if (Test-Path $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }

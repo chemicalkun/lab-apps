@@ -51,6 +51,8 @@ chmod 755 "$STAGING/Contents/MacOS/GPCMacAnalyzer"
 /usr/bin/xattr -cr "$STAGING"
 /usr/bin/codesign --force --sign - "$STAGING"
 /usr/bin/codesign --verify --deep --strict --verbose "$STAGING"
+# Explicit opt-in only: normal updates must preserve manual distribution ZIPs.
+if [[ "${GPC_CREATE_DISTRIBUTION_ZIP:-0}" == "1" ]]; then
 # ZIP preserves the signed bundle without metadata added by Desktop file providers.
 /usr/bin/ditto -c -k --norsrc --noextattr --keepParent "$STAGING" "$BUILD_TMP/Chromato BRO.zip"
 python3 - "$BUILD_TMP/Chromato BRO.zip" "$ROOT/インストール手順.txt" <<'PYZIP'
@@ -66,6 +68,8 @@ for folder in "$DIST" "$ROOT/build"; do
     [[ ! -f "$old" || "$old" == "$ZIP" ]] || rm -f "$old"
   done
 done
+
+fi
 
 if [ -e "$OUT" ]; then
   BACKUP="$ROOT/build/Chromato BRO.previous.$(date +%Y%m%d_%H%M%S).app"

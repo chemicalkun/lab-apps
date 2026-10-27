@@ -138,14 +138,14 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
 .nav-main{touch-action:none;user-select:none}.nav-btn.nav-moving{opacity:.65;outline:2px solid #45bfc3;cursor:grabbing}
 @media(min-width:901px){
  .workspace>aside{position:sticky;top:16px;max-height:calc(100vh - 110px);max-height:calc(100dvh - 110px);overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding-right:4px;align-self:start}
- .graph-settings{position:sticky;top:16px;max-height:calc(100vh - 220px);max-height:calc(100dvh - 220px);overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable}
+ .graph-settings{position:sticky;top:16px;max-height:var(--sidebar-height,calc(100vh - 220px));max-height:var(--sidebar-height,calc(100dvh - 220px));align-self:start;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable}
 }
 .graph-file-order{display:flex;align-items:center;gap:5px;margin-bottom:5px}.graph-file-order button{padding:2px 7px;font-size:12px}.graph-file-order .reorder-handle{cursor:grab;margin-right:auto}.graph-file.drag-over{outline:2px solid #2c66d5}.title-resize-handle{position:absolute;width:16px;height:16px;border-right:3px solid #4c78b1;border-bottom:3px solid #4c78b1;cursor:se-resize;touch-action:none;z-index:8}
 .graph-settings .graph-output{margin:18px 0}.graph-settings .graph-options{display:flex;flex-direction:column;gap:10px}.graph-settings .graph-output input[type="number"]{max-width:100%}
 .title-inline-editor{position:absolute;z-index:10;resize:none;padding:4px;border:2px solid #397bd2;background:#fff;color:#172e4e;outline:none}.title-inline-tools{flex-wrap:wrap;max-width:420px;position:absolute;z-index:11;display:flex;gap:4px;background:#fff;border:1px solid #cbd6e5;padding:4px;border-radius:6px}.title-inline-tools[hidden]{display:none}.title-inline-tools button{font-size:11px;padding:3px 7px}
 /* Analysis controls keep their natural height inside an independent scroll pane. */
 @media screen {
- #analysisPage>aside{display:flex;flex-direction:column;min-height:0;max-height:calc(100vh - var(--app-header-height,72px) - 40px);max-height:calc(100dvh - var(--app-header-height,72px) - 40px);overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding:0 6px 6px 0;align-self:start}
+ #analysisPage>aside{display:flex;flex-direction:column;min-height:0;max-height:var(--sidebar-height,calc(100vh - var(--app-header-height,72px) - 40px));max-height:var(--sidebar-height,calc(100dvh - var(--app-header-height,72px) - 40px));overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding:0 6px 6px 0;align-self:start}
  #analysisPage>aside>.card{flex:0 0 auto;min-width:0}
  #analysisPage>aside:focus-visible{outline:2px solid #397bd2;outline-offset:3px}
 }

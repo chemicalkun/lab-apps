@@ -5,7 +5,7 @@ private var smokeExportCount = 0
 private var smokeExports: [String: Data] = [:]
 extension GPCApplicationDelegate {
     func captureProductScreens(root: URL, index: Int = 0) {
-        let pages = [("analysis", "navAnalysis", 1280, 850), ("calibration", "navCalibration", 1280, 850), ("help", "helpOpen", 1280, 850), ("compact", "navGraph", 840, 600), ("analysis-short", "navAnalysis", 1280, 600), ("analysis-compact", "navAnalysis", 840, 600)]
+        let pages = [("analysis", "navAnalysis", 1280, 850), ("calibration", "navCalibration", 1280, 850), ("help", "helpOpen", 1280, 850), ("compact", "navGraph", 840, 600), ("graph-sidebar-scrolled", "navGraph", 1280, 850), ("analysis-short", "navAnalysis", 1280, 600), ("analysis-compact", "navAnalysis", 840, 600)]
         guard index < pages.count else { NSApp.terminate(nil); return }
         let (name, button, width, height) = pages[index]
         window.setContentSize(NSSize(width: width, height: height))
@@ -13,6 +13,15 @@ extension GPCApplicationDelegate {
         document.getElementById('helpClose').click();document.getElementById('\(button)').click();window.scrollTo(0,0);
         await new Promise(r=>setTimeout(r,150));
         if(document.documentElement.scrollWidth>innerWidth+1)throw Error('Horizontal overflow: \(name)');
+        if('\(name)'==='graph-sidebar-scrolled'){
+          window.scrollTo(0,350);await new Promise(r=>setTimeout(r,150));
+          const pane=document.querySelector('.graph-settings'),box=pane.getBoundingClientRect();
+          if(pane.scrollHeight<=pane.clientHeight||innerHeight-box.bottom>32||innerHeight-box.bottom<12)throw Error('Graph sidebar must extend to viewport bottom after page scroll '+JSON.stringify({view:innerHeight,top:box.top,bottom:box.bottom,height:box.height,scrollHeight:pane.scrollHeight,clientHeight:pane.clientHeight,pageY:window.scrollY,parent:pane.parentElement.getBoundingClientRect().toJSON(),css:getComputedStyle(pane).maxHeight}));
+          const graph=document.getElementById('graphCanvas'),top=graph.getBoundingClientRect().top,bodyY=window.scrollY;
+          pane.scrollTop=pane.scrollHeight;await new Promise(r=>requestAnimationFrame(r));
+          if(Math.abs(graph.getBoundingClientRect().top-top)>1||window.scrollY!==bodyY)throw Error('Graph sidebar scroll moved graph');
+          pane.scrollTop=0;await new Promise(r=>requestAnimationFrame(r));
+        }
         if('\(button)'==='navAnalysis'){
           const pane=document.querySelector('#analysisPage>aside'),cards=[...pane.children],box=pane.getBoundingClientRect();
           if(getComputedStyle(pane).overflowY!=='auto'||pane.scrollHeight<=pane.clientHeight)throw Error('Analysis sidebar must scroll independently');
@@ -69,6 +78,13 @@ extension GPCApplicationDelegate {
             var fixtures: [String: String] = [:]
             for url in try FileManager.default.contentsOfDirectory(at: samples, includingPropertiesForKeys: nil) {
                 fixtures[url.lastPathComponent] = try Data(contentsOf: url).base64EncodedString()
+            }
+            if ProcessInfo.processInfo.environment["GPC_LAYOUT_ONLY"] == "1" {
+                self.webView.callAsyncJavaScript("await window.GPC_APP_BRIDGE.importFiles([new File([Uint8Array.from(atob(data),c=>c.charCodeAt(0))],'41.crm')]);return true;",arguments:["data":fixtures["41.crm"]!],in:nil,in:.page) { result in
+                    if case .failure(let error)=result { fputs("FAIL layout setup: \(error)\n",stderr);exit(1) }
+                    self.captureProductScreens(root:root)
+                }
+                return
             }
             let phase = ProcessInfo.processInfo.environment["GPC_PERSIST_PHASE"] ?? ""
             let scriptName = phase.isEmpty ? "tests/native-smoke.js" : "tests/native-persistence.js"

@@ -1,5 +1,6 @@
 from pathlib import Path
-import plistlib, subprocess
+import plistlib, subprocess, argparse
+parser=argparse.ArgumentParser();parser.add_argument("--distribution-zip",action="store_true");args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 assert (root/'Resources/www/index.html').exists()
 for name in ['calibration-meta.js','session.js','product-ui.js','native-export.js','figure-data.js','gpc-core.js','app.js','calibration.js','graph-export.js','plot-interaction.js','figure-renderer.js']:
@@ -35,14 +36,15 @@ if app.exists():
     assert 'Chrome' not in links and 'Chromium' not in links
     print('PASS: delivered arm64 app, exact resource copies, ad-hoc signature, AppKit/WebKit linkage')
 
-    # Verify the portable archive with strict metadata checks after extraction.
-    import tempfile
-    with tempfile.TemporaryDirectory(prefix='gpc-archive-',dir='/private/tmp') as temp:
-        subprocess.run(['ditto','-x','-k',str(root.parent/f"Chromato BRO Mac ver{info['CFBundleShortVersionString']}.zip"),temp],check=True)
-        restored=Path(temp)/'Chromato BRO.app'
-        subprocess.run(['codesign','--verify','--deep','--strict',str(restored)],check=True)
-        assert (restored/'Contents/MacOS/GPCMacAnalyzer').read_bytes()==executable.read_bytes()
-    print('PASS: portable ZIP archive restores a strictly verified signed app')
+    if args.distribution_zip:
+        # Verify the portable archive with strict metadata checks after extraction.
+        import tempfile
+        with tempfile.TemporaryDirectory(prefix='gpc-archive-',dir='/private/tmp') as temp:
+            subprocess.run(['ditto','-x','-k',str(root.parent/f"Chromato BRO Mac ver{info['CFBundleShortVersionString']}.zip"),temp],check=True)
+            restored=Path(temp)/'Chromato BRO.app'
+            subprocess.run(['codesign','--verify','--deep','--strict',str(restored)],check=True)
+            assert (restored/'Contents/MacOS/GPCMacAnalyzer').read_bytes()==executable.read_bytes()
+        print('PASS: portable ZIP archive restores a strictly verified signed app')
 
 if app.exists():
     import struct

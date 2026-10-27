@@ -479,7 +479,7 @@ const tabnav=document.querySelector('.nav-main'),tabCapture=tabnav.setPointerCap
 const originalTabOrder=window.GPCPageOrder.snapshot(),selectedPage=window.GPCSession.workspace().page;
 const moveTab=async(button,longPress,cancel=false)=>{
  const r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{pointerId:21,button:longPress?0:2,clientX:r.left+r.width/2,clientY:r.top+10,bubbles:true}));
- if(longPress)await new Promise(resolve=>setTimeout(resolve,500));
+ if(longPress)await wait(()=>button.classList.contains('nav-moving'));
  tabnav.dispatchEvent(new PointerEvent('pointermove',{pointerId:21,clientX:tabnav.getBoundingClientRect().left-10,clientY:r.top+10,bubbles:true}));
  if(cancel)window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
  tabnav.dispatchEvent(new PointerEvent('pointerup',{pointerId:21,bubbles:true}));button.click();

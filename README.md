@@ -37,3 +37,15 @@ Chromato-PROの公式製品ではありません。対応形式や計算条件�
 ## MoleculeDFT
 
 セットアップ、利用方法、テストは `MoleculeDFT/README.md` と `MoleculeDFT/requirements-lock.txt` を参照してください。
+
+## 更新と配布ZIPの方針
+
+通常の更新ではMacの完成アプリとアプリ内更新用の公開リリースだけを更新し、手動配布用ZIPは保持します。
+
+- Mac通常ビルド：`GPC_NO_OPEN=1 bash build-macos.command`
+- 手動配布ZIPも更新する場合だけ：`GPC_CREATE_DISTRIBUTION_ZIP=1 bash build-macos.command`
+- Windows手動配布ZIPも更新する場合だけ：`./build-windows.ps1 -DistributionZip` または `python3 scripts/package.py --distribution-zip`
+- 通常の公開：Mac開発用フォルダで `python3 scripts/publish-github-release.py --publish`
+- 手動配布ZIPも含めた公開：`python3 scripts/publish-github-release.py --distribution-zips --publish`
+
+更新用アーカイブはアプリ内更新に必要なファイルです。手動導入用ZIPとは別の名前・URLで公開し、既存の配布ZIPは変更しません。

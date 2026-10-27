@@ -26,6 +26,7 @@ xcrun swiftc -O -D GPC_NATIVE_TEST -module-cache-path "$ROOT/build/ModuleCache" 
 xattr -cr "$APP"
 codesign --force --sign - "$APP"
 GPC_SESSION_DIRECTORY="$TEST_TMP/session" GPC_TEST_ROOT="$ROOT" "$APP/Contents/MacOS/GPCMacAnalyzer"
+if [[ "${GPC_LAYOUT_ONLY:-0}" == "1" ]]; then exit 0; fi
 python3 "$ROOT/tests/verify_native_exports.py"
 
 GPC_SESSION_DIRECTORY="$TEST_TMP/persistence" GPC_PERSIST_PHASE=write GPC_TEST_ROOT="$ROOT" "$APP/Contents/MacOS/GPCMacAnalyzer"

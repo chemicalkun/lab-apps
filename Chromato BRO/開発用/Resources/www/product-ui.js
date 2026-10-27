@@ -1,8 +1,19 @@
 (() => {
  const $=id=>document.getElementById(id);
- // A wrapped macOS/Windows header must leave the full controls pane inside the viewport.
+ // Fill the viewport below each pane's current top, including when it sticks after scrolling.
+ const panes=[document.querySelector('#analysisPage>aside'),document.querySelector('.graph-settings')].filter(Boolean);
+ let sidebarFrame=0;
+ function scheduleSidebarHeight(){if(sidebarFrame)return;sidebarFrame=requestAnimationFrame(()=>{
+  sidebarFrame=0;const heights=panes.filter(p=>p.getClientRects().length).map(p=>[p,Math.max(120,Math.floor(innerHeight-Math.max(16,p.getBoundingClientRect().top)-16))]);
+  for(const [pane,height] of heights){const value=`${height}px`;if(pane.style.getPropertyValue('--sidebar-height')!==value)pane.style.setProperty('--sidebar-height',value);}
+ });}
  const header=document.querySelector('body>header');
- if(header){const updateHeaderHeight=()=>document.documentElement.style.setProperty('--app-header-height',`${header.getBoundingClientRect().height}px`);new ResizeObserver(updateHeaderHeight).observe(header);window.addEventListener('resize',updateHeaderHeight);updateHeaderHeight();}
+ if(header){const updateHeaderHeight=()=>{document.documentElement.style.setProperty('--app-header-height',`${header.getBoundingClientRect().height}px`);scheduleSidebarHeight();};new ResizeObserver(updateHeaderHeight).observe(header);updateHeaderHeight();}
+ window.addEventListener('resize',scheduleSidebarHeight);window.addEventListener('scroll',scheduleSidebarHeight,{passive:true});
+ window.addEventListener('gpc-state-changed',scheduleSidebarHeight);
+ const pageObserver=new MutationObserver(scheduleSidebarHeight);
+ for(const page of ['analysisPage','graphPage','calibrationPage'])pageObserver.observe($(page),{attributes:true,attributeFilter:['hidden']});
+ scheduleSidebarHeight();
  let previousFocus=null;
  function showHelp(){previousFocus=document.activeElement;$('helpPanel').hidden=false;$('helpClose').focus();}
  function closeHelp(){$('helpPanel').hidden=true;previousFocus?.focus();}
