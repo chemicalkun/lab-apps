@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),M=require('../Resources/www/calibration-meta');
+assert.equal(M.filenameDate('Pststandard_chcl3_RI_2026.1001.anl'),'2026-10-01');
+assert.equal(M.filenameDate('sample_2026.0230.anl'),'');
+assert.equal(M.filenameDate('unknown.anl'),'');
+assert.equal(M.label({name:'研究室Excel 2026-09-10'}),'測定日時 未設定 · PSstandard');
+assert.equal(M.label({measuredDate:'2026-10-01',measuredTime:'14:23:45',detector:'RI'}),'2026/10/01 14:23:45 · PSstandard / RI');
+assert.equal(M.label({measuredDate:'2026-10-01',dateSource:'filename'}),'2026/10/01 · PSstandard');
+assert.equal(M.filenameDate('PS_20261001.csv'),'2026-10-01');
+assert.throws(()=>M.validate({measuredDate:'2026-02-30'}));
+assert.throws(()=>M.validate({measuredTime:'14:00'}));
+assert.throws(()=>M.validate({measuredDate:'2026-10-01',measuredTime:'25:00'}));
+console.log('PASS: calibration date provenance, unknown dates and invalid timestamps');

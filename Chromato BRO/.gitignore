@@ -1,0 +1,6 @@
+
+.release-keys/
+*.pem
+
+開発用/.release-keys/
+開発用/build/

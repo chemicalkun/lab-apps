@@ -1,0 +1,15 @@
+Chromato BRO Windows 26.10.21
+Windows 11 / Intel・AMD（64ビット）
+
+1. ZIPを右クリックし「すべて展開」を選びます。
+2. 展開したフォルダ内の Chromato BRO.exe を開きます。
+
+EXEだけを移動しないでください。フォルダ全体で保管してください。
+Chrome・VS Code・.NET SDKは不要です。
+Microsoft Edge WebView2 Runtimeが必要です（通常はWindows 11に付属）。
+
+測定データや設定はユーザーのLocalAppData内に保存します。
+研究記録は「プロジェクト保存」でJSONにも保存してください。
+
+本配布物はReleaseビルドです。Windows実機での動作は未確認です。
+コード署名はありません。詳しくはREADME.mdをご覧ください。

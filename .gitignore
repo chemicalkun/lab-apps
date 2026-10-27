@@ -1,0 +1,53 @@
+# Only the three requested projects belong to this repository.
+/*
+!/.gitignore
+!/README.md
+!/Chromato BRO/
+!/Chromato BRO-Windows/
+!/MoleculeDFT/
+
+# Private signing material, credentials and local tooling.
+.release-keys/
+*.pem
+*.key
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+.aws/
+.codex/
+.venv/
+venv/
+node_modules/
+.tools/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Generated binaries and build caches are distributed separately.
+*.app/
+*.zip
+*.pkg
+*.exe
+*.dll
+*.pdb
+*.log
+**/build/
+**/bin/
+**/obj/
+
+# Laboratory measurement files, user projects, validation outputs.
+*.crm
+*.anl
+*.xls
+*.xlsx
+*.xlsm
+*.csv
+*.tsv
+**/サン*/
+**/analysis/
+**/配布用更新情報/
+**/VALIDATION.md
+**/tests/native_ui_smoke.png
+/Chromato BRO-Windows/Chromato BRO Windows/

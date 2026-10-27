@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict'),T=require('../Resources/www/title-text');
+let runs=T.format('CHCl3',[],4,5,'sub');assert.deepEqual(runs,[{text:'CHCl',script:'normal'},{text:'3',script:'sub'}]);
+runs=T.sync('GPC(CHCl3',runs);runs=T.sync('GPC(CHCl3)',runs);assert.ok(runs.some(r=>r.text==='3'&&r.script==='sub'));
+const changed=T.sync('GPC(CHCl4)',runs);assert.ok(changed.some(r=>r.text==='4'&&r.script==='sub'));
+const superText=T.format('x2',[],1,2,'super');assert.equal(superText[1].script,'super');assert.deepEqual(T.format('x2',superText,1,2,'normal'),[{text:'x2',script:'normal'}]);
+assert.throws(()=>T.validate([{text:'x',script:'html'}]),/文字装飾/);
+const ctx={font:'',measureText(t){const size=parseFloat(this.font);return {width:t.length*size*.6,actualBoundingBoxAscent:size*.8,actualBoundingBoxDescent:size*.2};}};
+const sub=T.layout(ctx,'CHCl3',T.format('CHCl3',[],4,5,'sub'),60,'Arial',400);
+assert.ok(sub.width<240&&sub.height<100);assert.ok(sub.runs[1].y>sub.runs[0].y);assert.equal(sub.runs[1].size,42);
+const sup=T.layout(ctx,'x2',superText,60,'Arial',400);assert.ok(sup.runs[1].y<sup.runs[0].y);
+console.log('PASS: selected sub/sup/normal text, edit preservation, compact layout and invalid script rejection');

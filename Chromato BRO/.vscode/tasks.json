@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Macアプリをビルドして起動",
+      "type": "shell",
+      "command": "/bin/bash",
+      "args": [
+        "${workspaceFolder}/開発用/build-macos.command"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

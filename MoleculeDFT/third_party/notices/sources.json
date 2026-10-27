@@ -1,0 +1,32 @@
+[
+  {
+    "file": "geometric-1.1.1-LICENSE",
+    "url": "https://raw.githubusercontent.com/leeping/geomeTRIC/1.1.1/LICENSE",
+    "sha256": "65ba7e8b83688c129b00128dc260acd8c4be900a6f4b0e108e512bc607d3e5c8"
+  },
+  {
+    "file": "libcint-6.1.3-LICENSE",
+    "url": "https://raw.githubusercontent.com/sunqm/libcint/v6.1.3/LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  {
+    "file": "xcfun-2.1.1-LICENSE.md",
+    "url": "https://raw.githubusercontent.com/dftlibs/xcfun/v2.1.1/LICENSE.md",
+    "sha256": "5205b76a6008ba6ed6a638ca89d604f7263c1feb06ccddacfec0e4ccf094935e"
+  },
+  {
+    "file": "libxc-7.0.0-COPYING",
+    "url": "https://gitlab.com/libxc/libxc/-/raw/7.0.0/COPYING",
+    "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85"
+  },
+  {
+    "file": "CPython-3.9.6-LICENSE",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.9.6/LICENSE",
+    "sha256": "599826df92bfdcd2702eac691072498bb096c55af04ee984cf90f70ed77b5a70"
+  },
+  {
+    "file": "Boost-LICENSE_1_0.txt",
+    "url": "https://raw.githubusercontent.com/boostorg/boost/boost-1.85.0/LICENSE_1_0.txt",
+    "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+  }
+]

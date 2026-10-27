@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<title>Chromato BRO</title>
+<style>
+:root {font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,Arial,sans-serif;color:#1b2c42;background:#f3f6fb;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;font-size:13px;line-height:1.56}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{height:72px;background:#111f37;color:white;display:flex;align-items:center;justify-content:space-between;padding:0 29px;gap:20px}
+.logo{display:flex;align-items:center;gap:13px}.mark{width:39px;height:39px;border:2px solid #74d6d0;border-radius:12px;display:grid;place-items:center;color:#74d6d0;font-weight:800;font-size:24px;line-height:1}
+.logo h1{font-size:18px;line-height:1.2;margin:0;letter-spacing:.1px}.logo small{color:#a5b4ca;letter-spacing:.5px;font-size:10px}
+.hdright{display:flex;align-items:center;gap:12px;color:#b7c6da;font-size:12px}.hdright .dot{width:7px;height:7px;border-radius:50%;background:#52d1ac}
+.workspace{display:grid;grid-template-columns:338px minmax(0,1fr);gap:20px;padding:20px;max-width:1880px;margin:auto}
+aside{display:flex;flex-direction:column;gap:16px;min-width:0}.card{background:#fff;border:1px solid #e3eaf2;border-radius:14px;box-shadow:0 5px 22px rgba(30,55,94,.04);overflow:hidden}
+.cardpad{padding:20px}.card h2{font-size:14px;margin:0 0 13px;color:#152844;display:flex;align-items:center;gap:8px}.tag{font-size:10px;border-radius:6px;background:#eef5fa;color:#375879;font-weight:600;padding:3px 7px;margin-left:auto}
+.num{background:#e8f0fb;color:#37629c;min-width:22px;height:22px;border-radius:7px;display:inline-grid;place-items:center;font-size:12px}
+.drop{border:1.5px dashed #99b4d4;border-radius:11px;padding:20px 12px;text-align:center;background:#f7fbff;transition:.2s}.drop.on{border-color:#0c7e9a;background:#eafafb}
+.drop strong{display:block;font-size:13px}.drop p{font-size:11px;color:#66798c;margin:6px 0 12px}.primary{background:#2c66d5;color:white;border:1px solid #2c66d5;border-radius:8px;padding:8px 14px;font-weight:700}.primary:hover{background:#215bc2}
+.secondary{border:1px solid #cbd6e5;background:white;color:#2d4261;border-radius:8px;padding:8px 12px;font-weight:600}.secondary:hover{background:#f1f5fb}
+button:disabled{opacity:.5;cursor:not-allowed}.ghost{background:transparent;border:0;color:#4771b0;padding:4px 6px}
+.file-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:150px;overflow:auto}
+.file-item{width:100%;text-align:left;border:1px solid #e6edf6;border-radius:8px;padding:8px 10px;background:#fbfcfe;display:flex;align-items:center;gap:8px;color:#3a5071}
+.file-item.active{border-color:#6195eb;background:#eaf2ff}.file-item span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-item small{color:#7489a1}
+.hint{color:#708197;font-size:11px;line-height:1.65}.warning{border-radius:9px;background:#fff9e6;border:1px solid #f2db99;padding:10px 12px;font-size:11px;color:#805a12;line-height:1.7}.error{background:#fff1f1;border:1px solid #f4c9cb;color:#a12634;padding:11px;border-radius:9px;font-size:12px}
+label{color:#596e86;display:block;font-weight:600;font-size:11px}.input,textarea,select{border:1px solid #d9e3ef;background:white;border-radius:7px;padding:9px 9px;width:100%;color:#243a58;outline:none}
+.input:focus,textarea:focus,select:focus{border-color:#4f8cdd;box-shadow:0 0 0 2px #eaf2ff}textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.65;resize:vertical}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:12px 0}.formgrid.three{grid-template-columns:repeat(3,1fr)}.line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.line .fill{flex:1}
+.content{display:flex;flex-direction:column;gap:17px;min-width:0}.heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:1px 1px 0}.heading h2{font-size:18px;margin:0}.subheading{font-size:11px;color:#708197}
+.tabs{background:#e8eef6;display:inline-flex;padding:3px;gap:3px;border-radius:9px}.tabs button{padding:7px 12px;font-size:12px;border:0;background:transparent;border-radius:7px;color:#657890;font-weight:700}.tabs button.active{background:white;color:#1e4889;box-shadow:0 1px 4px #b5c5d8}
+.plot-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px 5px}.plot-head h3{font-size:14px;margin:0}.plot-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{border:1px solid #dde8f4;background:#f8fbff;padding:5px 10px;border-radius:99px;color:#5b7290;font-size:11px}
+.chartwrap{padding:4px 14px 11px;position:relative}canvas{width:100%;display:block}#chromChart{height:375px;touch-action:none;cursor:crosshair}#calChart{height:220px}
+#hover{display:none;position:absolute;pointer-events:none;z-index:4;background:#172e4e;color:white;padding:8px 10px;border-radius:6px;font-size:11px;white-space:nowrap;box-shadow:0 5px 15px #14274733}
+.range-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap;background:#f9fbff;padding:14px 20px 18px;border-top:1px solid #e8eef5}
+.range-controls label{min-width:100px}.range-controls .input{width:110px}.range-controls select{width:170px}.range-controls .secondary{height:36px}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.metric{padding:16px 17px;min-width:0}.metric small{color:#7890aa;font-size:11px;font-weight:650}.metric .value{font-size:22px;letter-spacing:-.5px;color:#15324f;font-weight:750;margin:4px 0}.metric .caption{color:#8193a8;font-size:10px}
+.metric.accent .value{color:#2a6cc7}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:17px}.sectionbody{padding:15px 20px}.statrows{display:grid;grid-template-columns:1fr auto;gap:9px 12px;margin-top:12px}.statrows dt{color:#61768f}.statrows dd{overflow-wrap:anywhere;max-width:260px;margin:0;font-variant-numeric:tabular-nums;font-weight:700}
+.equation{font-family:Menlo,Consolas,monospace;font-size:11px;word-break:break-all;background:#f5f8fd;color:#314a68;padding:10px;border-radius:8px;margin:12px 0}
+.results-note{padding:0 20px 17px}.statusline{min-height:24px;margin:10px 0 0;color:#64809d;font-size:11px}
+.footer{max-width:1880px;margin:0 auto 24px;padding:0 23px;color:#8192aa;font-size:11px}
+input[type=checkbox]{accent-color:#3675dc;vertical-align:middle}
+@media(max-width:1180px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.workspace{grid-template-columns:295px minmax(0,1fr)}.twocol{grid-template-columns:1fr}}
+@media(max-width:850px){header{padding:0 15px;height:64px}.workspace{grid-template-columns:1fr;padding:12px;gap:12px}aside{display:grid;grid-template-columns:1fr 1fr;align-items:start}.content{gap:12px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.hdright{display:none}#chromChart{height:290px}}
+@media(max-width:540px){aside{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{padding:13px}.metric .value{font-size:18px}.range-controls label{width:44%}.range-controls .input,.range-controls select{width:100%}.heading{align-items:start;flex-direction:column}.plot-head{align-items:start;flex-direction:column}.logo h1{font-size:16px}}
+@media print{aside,.plot-tools,.range-controls,.footer,header .hdright{display:none}header{background:white;color:black}.workspace{display:block;padding:0}.content{gap:12px}.card{break-inside:avoid;box-shadow:none}canvas{max-height:280px}}
+
+/* Dedicated calibration editor (v2.0) */
+header{justify-content:space-between}.nav-main{display:flex;gap:4px;align-items:center;background:#263a59;border-radius:10px;padding:4px}
+.nav-btn{border:0;border-radius:7px;padding:9px 17px;background:transparent;color:#c2d0e2;font-size:12px;font-weight:700;white-space:nowrap}
+.nav-btn.active{background:#fff;color:#1c4988;box-shadow:0 2px 8px #08172d35}
+[hidden]{display:none!important}
+.cal-page{max-width:1880px;margin:0 auto;padding:24px 24px 40px}
+.cal-hero{display:flex;align-items:center;justify-content:space-between;gap:22px;margin:0 3px 23px}
+.cal-hero h2{font-size:27px;margin:2px 0 5px;letter-spacing:-.5px;color:#132b4b}
+.cal-hero p{font-size:12px;color:#657a91;margin:0}.overline{font-size:10px;font-weight:800;color:#54749a;letter-spacing:1.7px}
+.apply-badge{font-size:11px;background:#e7f5ef;color:#226852;padding:8px 12px;border-radius:9px;white-space:nowrap}
+.apply-badge.pending{background:#fff3e3;color:#9e6724}
+.cal-grid{display:grid;grid-template-columns:minmax(0,1.48fr) minmax(360px,1fr);gap:17px;align-items:start}
+.cal-card-head{padding:18px 20px 13px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #edf1f6;flex-wrap:wrap}
+.cal-card-head h3{font-size:15px;letter-spacing:-.1px;margin:0 0 3px;color:#1b304b}.cal-card-head p{font-size:11px;color:#7c8da4;margin:0}
+.cal-table-scroll{overflow-x:auto;max-height:545px;overflow-y:auto}.cal-table{border-collapse:collapse;width:100%;font-size:12px;text-align:left;white-space:nowrap}
+.cal-table th{background:#f6f9fd;color:#667b92;font-size:10px;font-weight:750;padding:12px 10px;position:sticky;top:0;z-index:1;border-bottom:1px solid #e2eaf3}
+.cal-table td{padding:7px 7px;border-bottom:1px solid #eef2f7}.cal-table tr.disabled{opacity:.50;background:#fafafa}.cal-table td:nth-child(1),.cal-table td:nth-child(2),.cal-table td:last-child{text-align:center}
+.cal-table input[type=text],.cal-table input[type=number]{border:1px solid #d9e4ee;border-radius:6px;padding:7px 8px;background:#fff;min-width:0;max-width:100%;outline-offset:1px}
+.cal-table .standard-name{width:125px}.cal-table .standard-time{width:107px}.cal-table .standard-weight{width:122px}
+.cal-table .cal-readonly{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace;color:#56718a;font-size:11px}
+.cal-table tr.selected-edit{background:#f4f9ff}.cal-table .small-remove{border:0;background:transparent;color:#a5b4c9;padding:5px 9px;border-radius:5px;font-size:18px;line-height:1}
+.cal-table .small-remove:hover{background:#ffeeee;color:#b74b4b}
+.cal-panel-foot{border-top:1px solid #e6eef6;padding:16px 19px;display:flex;gap:12px;justify-content:space-between;align-items:end;flex-wrap:wrap;background:#fbfcfe}
+.cal-inline-label{display:flex;flex-direction:column;gap:4px;font-size:10px;color:#637993;font-weight:700}.cal-inline-label select{min-width:120px}.cal-inline-label input{width:215px}
+.cal-panel-foot .line{gap:8px}.cal-panel-foot button{white-space:nowrap}.primary.apply{background:#0b887a;border-color:#0b887a}.primary.apply:hover{background:#0c7268}.primary:disabled{background:#a3b4c6;border-color:#a3b4c6;cursor:not-allowed}
+.cal-error{min-height:28px;padding:0 20px 9px;color:#b03e3e;font-size:11px}.cal-error.success{color:#257c60}
+.cal-stat-card{padding-bottom:4px}.cal-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:19px 19px 12px}
+.cal-kpi div{padding:11px 12px;background:#f6f9fd;border-radius:10px}.cal-kpi div:last-child{grid-column:span 2}
+.cal-kpi small{display:block;font-size:10px;color:#7b8fa6;font-weight:700}.cal-kpi strong{font-size:20px;color:#1d457a;display:block;margin-top:1px;font-variant-numeric:tabular-nums}
+.cal-kpi div:last-child strong{font-size:15px}.cal-eq-label{color:#6c83a0;font-size:10px;font-weight:700;margin:4px 19px}
+.cal-equation{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 19px 12px;border-radius:10px;border:1px solid #e4edf7;padding:13px;background:#f8faff;color:#253e5f;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.75}
+.cal-coeffs{margin:0 19px 10px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.cal-coeffs div{background:#fbfcfe;border:1px solid #e9eef5;border-radius:7px;padding:8px 10px;display:flex;justify-content:space-between;gap:9px}
+.cal-coeffs small{color:#6f84a0;font-size:10px}.cal-coeffs strong{font-size:11px;color:#29415d;font-family:ui-monospace,Menlo,monospace}
+.cal-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:15px 19px 5px}.cal-actions button{font-size:11px}
+.cal-footnote{color:#7b8da1;font-size:10px;padding:0 20px 13px;line-height:1.7}
+.cal-big-chart{height:395px!important;width:100%;padding:7px 18px 0}
+.cal-legend{display:flex;gap:22px;padding:9px 28px 17px;color:#70859a;font-size:11px;align-items:center}
+.cal-anl-tool{margin:0;padding:15px 20px;background:#f0f6ff;border-bottom:1px solid #dae7fa}
+.cal-anl-tool .cal-toolbar-title{font-size:13px;color:#204b86;font-weight:800;display:block}
+.cal-anl-tool .cal-toolbar-title small{display:block;color:#637d9a;font-weight:500;font-size:11px;line-height:1.6;margin-top:3px}
+.cal-anl-buttons{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.cal-anl-buttons label{display:flex;align-items:center;gap:6px}
+.cal-anl-buttons select{min-width:110px;width:auto}
+.anl-note{margin:8px 0 0;font-size:11px;color:#536d89;line-height:1.65}
+.anl-peaks{padding:11px 20px;border-bottom:1px solid #edf1f6;background:#fff}
+.anl-peaks-title{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#385779;gap:10px;margin-bottom:5px}
+.anl-peaks canvas{width:100%;height:105px;display:block}
+.anl-peaks small{display:block;color:#7387a0;font-size:10px}
+.legenddot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}.legenddot.used{background:#f28e51}.legenddot.omitted{background:#b6c4d3}.legendline{width:16px;height:3px;display:inline-block;margin-right:6px;background:#2e6cca;vertical-align:middle}
+.cal-resid-chart{height:254px!important;padding:9px 14px;width:100%}
+@media(max-width:1320px){.hdright{display:none}.cal-grid{grid-template-columns:1fr}.cal-plot-card{grid-row:2}.cal-residual-card{grid-row:3}}
+@media(max-width:900px){header{height:auto;min-height:72px;flex-wrap:wrap;padding:11px 16px}.cal-page{padding:15px}.cal-hero{align-items:start;flex-direction:column}.cal-grid{grid-template-columns:minmax(0,1fr)}.cal-panel-foot{flex-direction:column;align-items:stretch}}
+@media(max-width:540px){.nav-btn{padding:7px 10px;font-size:11px}.cal-hero h2{font-size:22px}.cal-card-head{align-items:start}.cal-panel-foot .line{align-items:stretch}.cal-panel-foot .line button{flex:1}}
+@media print{.nav-main{display:none}.cal-page{padding:0}.cal-actions,.cal-panel-foot,.small-remove{display:none!important}}
+
+
+.cal-measure-toolbar{padding:14px 19px 12px;background:#f6fafc;border-bottom:1px solid #e0eaf2;display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cal-toolbar-title{font-size:12px;font-weight:750;color:#294665}.cal-toolbar-title small{display:block;font-size:10px;line-height:1.4;color:#8598a9;font-weight:400;margin-top:2px}
+.cal-measure-toolbar .line{gap:7px}.cal-measure-toolbar label{font-size:10px;font-weight:650;color:#69809b;display:flex;flex-direction:column;gap:3px}
+.cal-measure-toolbar input{width:92px;padding:6px 8px}.cal-measure-toolbar select{min-width:87px}
+.cal-measure-toolbar button{align-self:end}
+
+.graph-page{max-width:1880px;margin:auto;padding:24px}
+.graph-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+.graph-files{max-height:380px;overflow:auto}.graph-file{border:1px solid #dce5f0;border-radius:8px;padding:8px;margin:8px 0}.graph-file-controls{display:flex;gap:8px;align-items:center;margin-top:6px}.graph-file-controls label{font-size:11px;margin:0}.graph-file-controls input[type="number"]{width:90px}.graph-file-controls input[type="color"]{width:36px;height:28px;padding:1px}.graph-file.selected{border-color:#6093dd;background:#f2f6ff}.graph-settings>label{margin-bottom:5px}.graph-settings .primary{padding:9px 11px}
+.graph-settings .drag-mode-buttons{flex-direction:column}.graph-settings .drag-mode-buttons button{text-align:left;width:100%}.graph-output,.graph-preview>p.hint,.graph-preview>#graphStatus{margin-left:20px;margin-right:20px}
+.graph-legend-editor{display:block;font-size:11px;margin-top:7px}.graph-legend-editor input{width:100%;margin-top:3px}
+.graph-options{display:flex;flex-direction:column;gap:13px;margin:22px 0}
+.graph-preview .graph-options{margin:22px 28px;padding-left:8px}.graph-options label{font-size:12px}.graph-preview{padding-bottom:14px}
+#graphCanvas{touch-action:none;cursor:crosshair;width:100%;height:auto}.graph-empty{padding:100px 24px;text-align:center;color:#708197}
+@media(max-width:1050px){.graph-layout{grid-template-columns:1fr}.graph-settings{max-width:none}.graph-options{flex-direction:row;flex-wrap:wrap}.graph-settings .formgrid{max-width:400px}}
+@media(max-width:1500px){.hdright{display:none}}
+.axis-label-handle{position:absolute;cursor:grab;touch-action:none;border:1px dashed transparent;z-index:6}.axis-label-handle:hover,.axis-label-handle:focus-visible{border-color:#738cac;background:rgba(60,100,160,.04);outline:none}.axis-label-handle.moving{cursor:grabbing;border-color:#738cac}.graph-canvas-wrap{position:relative}.plot-selection{position:absolute;pointer-events:none;border:1px solid #286ed2;background:rgba(40,110,210,.13);z-index:5}
+.file-row{display:flex;gap:5px;align-items:stretch}.file-row .file-item{flex:1;min-width:0}.file-remove{flex:none;border:1px solid #e2d7d7;background:white;color:#a04040;border-radius:7px;font-size:11px;padding:5px 8px}.file-remove:hover{background:#fff1f1}
+.drag-mode-control{display:flex;flex-direction:column;gap:5px;color:#596e86;font-size:11px;font-weight:600}.drag-mode-buttons{display:flex;flex-wrap:wrap;border:1px solid #b9cbe3;border-radius:8px;overflow:hidden}.drag-mode-buttons button{border:0;background:white;color:#335578;font-size:12px;padding:10px 12px}.drag-mode-buttons button[aria-pressed="true"]{background:#2c66d5;color:white}.drag-mode-buttons button:disabled{opacity:.45;cursor:default}.drag-mode-buttons button#dragBaseline[aria-pressed="true"],.drag-mode-buttons button#graphDragBaseline[aria-pressed="true"]{background:#ad5909}.plot-selection[data-mode="baseline"]{border-color:#db7b20;background:rgba(219,123,32,.13)}.drag-mode-buttons button:focus-visible{outline:2px solid #172e4e;outline-offset:-3px}
+
+/* Desktop appearance: shared spacing and controls. */
+:root{--blue:#0869e9;--teal:#00ab98;--ink:#15283f;background:#f4f6f9;color:var(--ink)}
+header{height:68px;padding:0 24px;gap:14px;background:#14243c}.brand-icon{width:42px;height:42px;border-radius:10px}.logo small{letter-spacing:.1px}.logo h1{font-size:18px}
+button{border-radius:7px!important;transition:none!important;min-height:32px}button.primary{background:#1766d6}.header-help{background:transparent;border:1px solid #61758f;color:#eaf2ff;padding:6px 12px}.nav-main{margin-left:auto}.nav-btn{white-space:nowrap}
+.card{border-radius:10px;box-shadow:0 2px 10px #17375505}.workspace{grid-template-columns:310px minmax(0,1fr);gap:18px;padding:20px}.num{display:none}.cardpad{padding:18px}.drop{padding:17px 12px}.hint{line-height:1.6}.advanced{margin-top:10px}.advanced summary{cursor:pointer;color:#657991;font-size:12px;margin-bottom:8px}
+.metric .value{font-size:27px;font-variant-numeric:tabular-nums}.metric.accent{border-top:3px solid var(--teal)}.warning-card{border-left:3px solid #d8993c}.warning-card .hint{color:#78551f}.cal-hero{margin-bottom:18px}.cal-hero h2{font-size:25px}.cal-hero p{margin-top:4px}.graph-page,.cal-page{padding:24px}.graph-layout{grid-template-columns:290px minmax(0,1fr)}.graph-settings h2{font-size:14px}.graph-settings .drag-mode-buttons button{font-size:12px}.drag-mode-buttons button{border-radius:0!important}.drag-mode-buttons button[aria-pressed="true"]{background:#1766d6}.input,select,textarea{border-radius:6px}.session-error{position:fixed;bottom:14px;left:20px;right:20px;z-index:40;background:#fff3df;color:#80410e;border:1px solid #e0a861;padding:12px 16px;border-radius:9px}
+.help-overlay{position:fixed;inset:0;z-index:100;background:#10203566;display:flex;align-items:center;justify-content:center;padding:24px}.help-content{background:#fff;border-radius:14px;max-width:820px;max-height:90vh;overflow:auto;padding:28px;color:#263d55;box-shadow:0 20px 70px #00112233}.help-heading{display:flex;align-items:center;gap:14px;border-bottom:1px solid #e2e9ef;padding-bottom:18px}.help-heading h2{margin:0}.help-heading span{font-size:12px;color:#60738a}.help-heading button{margin-left:auto}.help-content h3{margin-top:25px}.help-content p{line-height:1.85}.help-content code{overflow-wrap:anywhere}.help-content summary{cursor:pointer;color:#1464bf}.hint:empty{display:none}
+@media(max-width:1100px){.workspace{grid-template-columns:270px minmax(0,1fr);gap:12px;padding:14px}.metrics{grid-template-columns:repeat(3,1fr)}.nav-btn{padding:8px 10px}.logo small{display:none}.graph-layout{grid-template-columns:260px minmax(0,1fr)}.plot-head{flex-wrap:wrap;gap:10px}}
+@media(max-width:900px){header{padding:0 16px;gap:10px}.header-help{padding:4px 7px}.logo h1{font-size:16px}.brand-icon{width:34px;height:34px}.workspace,.graph-layout,.cal-grid{grid-template-columns:1fr}.workspace aside{display:grid;grid-template-columns:1fr 1fr}.workspace aside>.card{min-width:0}.metrics{grid-template-columns:repeat(3,1fr)}.graph-settings{display:block}.nav-btn{font-size:11px}.graph-preview{min-width:0}}
+[hidden]{display:none!important}
+.nav-main{touch-action:none;user-select:none}.nav-btn.nav-moving{opacity:.65;outline:2px solid #45bfc3;cursor:grabbing}
+@media(min-width:901px){
+ .workspace>aside{position:sticky;top:16px;max-height:calc(100vh - 110px);max-height:calc(100dvh - 110px);overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding-right:4px;align-self:start}
+ .graph-settings{position:sticky;top:16px;max-height:calc(100vh - 220px);max-height:calc(100dvh - 220px);overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable}
+}
+.graph-file-order{display:flex;align-items:center;gap:5px;margin-bottom:5px}.graph-file-order button{padding:2px 7px;font-size:12px}.graph-file-order .reorder-handle{cursor:grab;margin-right:auto}.graph-file.drag-over{outline:2px solid #2c66d5}.title-resize-handle{position:absolute;width:16px;height:16px;border-right:3px solid #4c78b1;border-bottom:3px solid #4c78b1;cursor:se-resize;touch-action:none;z-index:8}
+.graph-settings .graph-output{margin:18px 0}.graph-settings .graph-options{display:flex;flex-direction:column;gap:10px}.graph-settings .graph-output input[type="number"]{max-width:100%}
+.title-inline-editor{position:absolute;z-index:10;resize:none;padding:4px;border:2px solid #397bd2;background:#fff;color:#172e4e;outline:none}.title-inline-tools{flex-wrap:wrap;max-width:420px;position:absolute;z-index:11;display:flex;gap:4px;background:#fff;border:1px solid #cbd6e5;padding:4px;border-radius:6px}.title-inline-tools[hidden]{display:none}.title-inline-tools button{font-size:11px;padding:3px 7px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><img class="brand-icon" src="app-icon.png" alt=""><div><h1>Chromato BRO</h1><small>GPC / SEC データ解析</small></div></div>
+  <nav class="nav-main" aria-label="画面切替"><button class="nav-btn" id="navGraph" type="button">概形表示</button><button class="nav-btn active" id="navAnalysis" type="button">分子量計算</button><button class="nav-btn" id="navCalibration" type="button">検量線作成</button></nav><button id="helpOpen" class="header-help" title="操作ガイド">ヘルプ</button>
+</header>
+<div class="workspace" id="analysisPage">
+<aside>
+<section class="card cardpad">
+<h2><span class="num">1</span>測定データの読み込み <span class="tag">.crm / .csv</span></h2>
+<div class="drop" id="drop"><strong>ファイルをドラッグ＆ドロップ</strong><p>またはCRM / CSVを選択（複数可）</p><button class="primary" id="chooseFile">ファイルを選択</button><input hidden type="file" id="fileInput" accept=".crm,.csv,.txt" multiple></div>
+<div class="file-list" id="files"></div><button class="secondary" id="removeAllFiles" disabled>全て削除</button><p class="hint">削除しても元ファイルは残ります。</p>
+<div id="readInfo" class="hint" style="margin-top:11px">測定データを読み込む</div>
+</section>
+<section class="card cardpad">
+<h2><span class="num">2</span>積分・ベースライン</h2>
+
+<div class="formgrid"><label>積分開始 [min]<input class="input" id="start" type="number" min="0" step="0.01" value="7.8"></label><label>積分終了 [min]<input class="input" id="end" type="number" min="0" step="0.01" value="10.4"></label></div>
+<label for="baseMode">ベースライン処理</label><select id="baseMode"><option value="endpoints">積分範囲両端を結ぶ直線</option><option value="range">始点・終点を指定して結ぶ直線</option><option value="manual">傾き・切片を入力</option><option value="zero">0を基準とする</option></select>
+<div id="baseRange" class="formgrid" style="display:none"><label>ベースライン始点 [min]<input class="input" id="baseStart" type="number" step="any" value="0.1"></label><label>ベースライン終点 [min]<input class="input" id="baseEnd" type="number" step="any" value="18"></label><p class="hint" style="grid-column:1/-1">2時刻を数値入力、またはグラフ上のドラッグで指定。積分区間とは独立です。</p></div>
+<div id="baseCoeffs" class="formgrid" style="display:none"><label>傾き [信号/min]<input class="input" id="baseSlope" type="number" step="any" value="0"></label><label>切片 [信号]<input class="input" id="baseIntercept" type="number" step="any" value="0"></label></div>
+<p class="hint" id="modeInfo">RI信号を質量濃度に比例するものとして解析します。「ドラッグ操作」を「積分範囲を選択」に切り替えると、グラフ上で積分範囲を設定できます。</p>
+
+</section>
+<section class="card cardpad">
+<h2><span class="num">3</span>分子量較正 <span class="tag">1〜3次</span></h2>
+<p class="hint" style="margin-top:-5px">測定条件に合う検量線を適用してください。</p>
+<div class="formgrid"><label>次数<select id="degree"><option>1</option><option>2</option><option selected>3</option></select></label><label>標準試料の単位<select disabled><option>g/mol</option></select></label></div>
+<label>各行: 保持時間 [min], 分子量 [g/mol]</label>
+<textarea id="standards" rows="10" spellcheck="false"></textarea>
+<div class="line" style="margin-top:10px"><button class="primary" id="fit">較正曲線を再計算</button><button class="secondary" id="restoreCal">標準初期値</button></div>
+<div class="statusline" id="calStatus"></div><label>保存した検量線<select class="input" id="calLibrarySelect"><option value="">検量線を選択</option></select></label><div class="line"><button class="secondary" id="calLibrarySave">現在の検量線を保存</button><button class="ghost" id="calLibraryDelete" disabled>選択した検量線を削除</button></div><label>保存名<input class="input" id="calLibraryName" type="text" maxlength="120" placeholder="省略時は検量線名"></label><p id="calLibraryStatus" class="hint" role="status"></p>
+</section>
+<section class="card cardpad">
+<h2><span class="num">4</span>結果の保存</h2>
+<div class="line" style="margin-bottom:9px"><button class="secondary" id="csvExport">分布CSV</button><button class="secondary" id="summaryExport">結果CSV</button><button class="secondary" id="pngExport">グラフPNG</button><button class="secondary" id="pngCopy">画像コピー</button></div>
+<div class="line"><button class="secondary" id="jsonExport">プロジェクト保存</button><button class="secondary" id="jsonImport">プロジェクトを開く</button><input hidden type="file" id="jsonFile" accept=".json"></div>
+<p class="hint" style="margin-bottom:0">較正係数と複数の測定データをJSONに保存し、次回同じ状態を復元できます。</p>
+</section>
+</aside>
+<main class="content">
+<div class="heading"><div><h2>分子量計算</h2><div class="subheading" id="datasetTitle">ファイルを読み込んで解析を開始</div></div><div class="pill" id="verification">未読込</div></div>
+<section class="card">
+<div class="plot-head"><h3>検出強度 <span class="subheading">/ 保持時間 [min]</span></h3><div class="plot-tools"><label style="font-size:11px;font-weight:500;display:flex;align-items:center;gap:6px"><input type="checkbox" id="overlay" checked>複数データの重ね合わせ</label><button class="secondary" id="resetView">全体表示</button></div></div>
+<div class="chartwrap"><canvas id="chromChart"></canvas><div id="hover"></div></div>
+<div class="range-controls"><label>横軸の数字間隔 [min]<input class="input" id="analysisTickInterval" type="number" min="1" step="1" placeholder="自動"></label><label>表示時間 [min]<input class="input" id="viewStart" type="number" step="0.1" value="0"></label><label>〜<input class="input" id="viewEnd" type="number" step="0.1" value="20"></label><div class="drag-mode-control"><span id="dragModeLabel">ドラッグ操作</span><div id="plotDragMode" class="drag-mode-buttons" role="group" aria-labelledby="dragModeLabel" data-mode="zoom"><button type="button" id="dragZoom" aria-pressed="true">枠でズーム</button><button type="button" id="dragIntegrate" aria-pressed="false">積分範囲を選択</button><button type="button" id="dragBaseline" aria-pressed="false">ベースライン範囲を選択</button></div></div><span class="hint">ピンチで拡大・縮小 / ダブルクリックで全体表示</span><button id="update" class="primary">解析を更新</button></div>
+</section>
+<div class="metrics">
+<div class="card metric accent"><small>数平均分子量 Mn</small><div class="value" id="mn">—</div><div class="caption">g/mol · 相対値</div></div>
+<div class="card metric"><small>重量平均分子量 Mw</small><div class="value" id="mw">—</div><div class="caption">g/mol · 相対値</div></div>
+<div class="card metric"><small>Z平均分子量 Mz</small><div class="value" id="mz">—</div><div class="caption">g/mol</div></div>
+<div class="card metric accent"><small>分散度 Đ</small><div class="value" id="dispersity">—</div><div class="caption">Mw / Mn</div></div>
+<div class="card metric"><small>ピーク分子量 Mp</small><div class="value" id="mp">—</div><div class="caption">g/mol</div></div>
+</div>
+<section class="card warning-card" id="analysisWarnings" role="status" aria-live="polite"><div class="sectionbody" style="padding-bottom:0"><h2 style="margin-bottom:4px">解析上の注意</h2><div id="notice" class="hint">測定データを読み込んでください。</div></div><div class="results-note" id="errBox" style="display:none"></div></section>
+<div class="twocol">
+<section class="card"><div class="sectionbody"><h2>検量線 <span class="tag" id="calR2">R² —</span></h2><div id="equation" class="equation">log₁₀(M) = ...</div><canvas id="calChart"></canvas><p class="hint" id="calRange">標準試料の保持時間範囲：—</p></div></section>
+<section class="card"><div class="sectionbody"><h2>積分レポート</h2><dl class="statrows"><dt>ファイル</dt><dd id="statFile">—</dd><dt>適用検量線</dt><dd id="statCalibration">—</dd><dt>積分面積（正信号）</dt><dd id="statArea">—</dd><dt>最大ピーク時刻</dt><dd id="statPeakTime">—</dd><dt>最大ピーク信号</dt><dd id="statPeakSignal">—</dd><dt>積分時刻範囲</dt><dd id="statBounds">—</dd><dt>ベースライン</dt><dd id="statBaseline">—</dd><dt>較正曲線の外挿</dt><dd id="statExtrap">—</dd><dt>積分点数</dt><dd id="statPoints">—</dd></dl><div style="margin-top:17px" class="line"><button class="secondary" id="printReport">印刷 / PDF保存</button></div></div></section>
+</div>
+</main></div>
+<div id="calibrationPage" class="cal-page" hidden>
+<div class="cal-hero"><div><h2>検量線作成</h2><p>標準試料の保持時間と分子量から検量線を作成します。</p></div><span id="calAppliedBadge" class="apply-badge">現在の解析へ適用済み</span></div>
+ <div class="cal-grid">
+  <section class="card cal-points"><div class="cal-card-head"><div><h3>標準試料データ <span id="calActiveCount" class="tag">10点</span></h3><p>各行の「使用」で近似に含める点を選択。数値変更後は「検量線を計算」を押してください。</p></div><div class="line"><button class="secondary" id="calImportCSV">CSV読込</button><input type="file" id="calCSVFile" accept=".csv,.txt" hidden><button class="secondary" id="calAddRow">＋ 行を追加</button><button class="ghost" id="calClearRows">全行クリア</button><button class="ghost" id="calRestore">標準初期値</button></div></div>
+  <div class="cal-anl-tool"><span class="cal-toolbar-title">ANLファイルから標準試料10ピークを読み込む<small>RI / UVを選択し、各ピークの既知分子量を入力してください。</small></span>
+   <div class="cal-anl-buttons"><button id="calImportANL" class="primary" type="button">ANLファイルを選択</button><input type="file" id="calANLFile" accept=".anl" multiple hidden><label>優先検出器<select id="calANLDetector"><option value="RI">RI</option><option value="UV">UV</option></select></label><label><input type="checkbox" id="calUseStoredMasses">新規行にファイル内分子量を転記（任意）</label></div>
+   <div class="anl-note" id="calANLInfo">RI用・UV用のどちらか1ファイル、または両方同時に選択できます。保持時間を更新し、入力済み分子量は行順に保持します。</div>
+  </div>
+  <div class="anl-peaks" id="calANLPeaks" hidden><div class="anl-peaks-title"><span id="calANLPeaksTitle">ピーク保持時間</span><span class="tag" id="calANLPeaksCount">10点</span></div><canvas id="calANLPeaksCanvas" aria-label="ANLファイルから読み込んだピーク保持時間の位置図"></canvas><small>ピークの位置のみ表示しています。強度・形状はANLに含まれないため表示していません。</small></div>
+  <div class="cal-measure-toolbar"><span class="cal-toolbar-title">標準試料の測定データからピーク時間を取り込む <small>測定ファイルのピーク時刻を自動抽出します。分子量は手動で設定してください。</small></span><div class="line"><label>検索開始 [min]<input id="calPeakStart" type="number" step="0.1" class="input" value="4.5"></label><label>検索終了 [min]<input id="calPeakEnd" type="number" step="0.1" class="input" value="10.5"></label><label>ピーク方向<select id="calPeakDirection"><option value="positive">正</option><option value="negative">負</option><option value="absolute">正負両方</option></select></label><button id="calImportCRM" class="secondary">CRM / CSVから追加</button><input hidden id="calMeasurements" type="file" accept=".crm,.csv,.txt" multiple></div></div>
+  <div class="cal-table-scroll"><table class="cal-table"><thead><tr><th>使用</th><th>No.</th><th>標準試料名</th><th>保持時間 t [min]</th><th>分子量 M [g/mol]</th><th>log₁₀(M)</th><th>残差 log₁₀(M)</th><th></th></tr></thead><tbody id="calTableBody"></tbody></table></div>
+  <div class="cal-measure-toolbar"><span class="cal-toolbar-title">標準試料：PSstandard<small id="calDateNote" hidden>測定日時が不明な場合は空欄にしてください。</small></span><div class="line"><label>測定日<input id="calMeasuredDate" class="input" type="date"></label><label>測定時刻<input id="calMeasuredTime" class="input" type="time" step="1"></label></div><input id="calDateSource" type="hidden" value=""><input id="calMetaDetector" type="hidden" value=""></div>
+<div class="cal-panel-foot"><div class="line"><label class="cal-inline-label">近似次数 <select id="calDegree"><option value="1">1次</option><option value="2">2次</option><option value="3" selected>3次</option></select></label><span class="cal-inline-label">検量線名 <span id="calNameDisplay">PSstandard（標準初期値）</span><input id="calName" type="hidden" value="PSstandard（標準初期値）"></span></div><div class="line"><button class="primary" id="calCalculate">検量線を計算</button><button class="primary apply" id="calApply" disabled>この検量線を解析に適用 →</button></div></div>
+  <div id="calError" class="cal-error" role="status" aria-live="polite"></div>
+  </section>
+  <section class="card cal-stat-card"><div class="cal-card-head"><div><h3>近似結果</h3><p>評価指標はlog₁₀(M)空間における値です。</p></div><span class="pill" id="calFitStatus">再計算待ち</span></div>
+   <div class="cal-kpi"><div><small>決定係数 R²</small><strong id="calR2Big">—</strong></div><div><small>RMSE [log₁₀ M]</small><strong id="calRmse">—</strong></div><div><small>検量線範囲</small><strong id="calTimeLimits">—</strong></div></div>
+   <div class="cal-eq-label">較正式</div><pre class="cal-equation" id="calEquationFull">log₁₀(M) = ...</pre>
+   <div id="calCoefficients" class="cal-coeffs"></div>
+   <div class="cal-actions"><button class="secondary" id="calCopyEquation">係数と式をコピー</button><button class="secondary" id="calExportCSV">標準データCSV</button><button class="secondary" id="calExportJSON">検量線JSON保存</button><button class="secondary" id="calImportJSON">検量線を開く</button><input type="file" id="calJSONFile" accept=".json" hidden></div>
+   
+  </section>
+  <section class="card cal-plot-card"><div class="cal-card-head"><div><h3>分子量検量線</h3><p>横軸：保持時間 / 縦軸：log₁₀(M)。青線が近似曲線、丸印が標準試料です。</p></div><button class="secondary" id="calExportPNG">グラフPNG</button></div><canvas id="calEditorChart" class="cal-big-chart"></canvas><div class="cal-legend"><span><i class="legenddot used"></i>近似に使用</span><span><i class="legenddot omitted"></i>除外</span><span><i class="legendline"></i>近似曲線</span></div></section>
+  <section class="card cal-residual-card"><div class="cal-card-head"><div><h3>残差プロット</h3><p>残差 = 実測 log₁₀(M) − 近似 log₁₀(M)</p></div></div><canvas id="calResidualChart" class="cal-resid-chart"></canvas><p id="calResidualNote" class="cal-footnote">標準試料を編集すると結果を再計算できます。</p></section>
+ </div>
+<section class="card cardpad" id="calEditorLibrarySection" style="margin-top:18px"><h3>検量線を保存一覧に追加</h3><div class="line"><label>保存名<input class="input" id="calEditorLibraryName" type="text" maxlength="120" placeholder="省略時は検量線名"></label><button class="primary" id="calEditorLibrarySave">この検量線を保存</button></div><p id="calEditorLibraryStatus" class="hint" role="status">計算済みの検量線を保存し、分子量計算の一覧から選択できます。</p></section>
+</div>
+<section id="graphPage" class="graph-page" hidden>
+  <div class="cal-hero"><div><h2>概形表示</h2><p>波形を比較し、図として保存します。</p></div><span class="pill" id="graphImageSize">PNG · 横2400 px</span></div>
+  <div class="graph-layout">
+    <section class="card cardpad graph-settings">
+      <h2>測定データ</h2>
+      <button class="primary" id="graphChooseFile">CRM / CSVを読み込む</button><input type="file" id="graphFileInput" accept=".crm,.csv" multiple hidden>
+      <p id="graphImportStatus" class="hint" role="status" aria-live="polite"></p>
+      <div id="graphFiles" class="graph-files" aria-label="測定データ一覧"></div><button class="secondary" id="graphRemoveAll" disabled>全て削除</button><p class="hint">チェックで表示切替。削除しても元ファイルは残ります。</p>
+      <h2 style="margin-top:22px">画像の設定</h2>
+      <label id="graphModeLabel">概形表示方法</label><input id="graphMode" type="hidden" value="normalize"><div class="drag-mode-buttons" role="group" aria-labelledby="graphModeLabel" data-choice="graphMode"><button type="button" data-value="normalize" aria-pressed="true">試料ごとに規格化（最大100）</button><button type="button" data-value="baseline" aria-pressed="false">始点・終点の基準線補正</button><button type="button" data-value="raw" aria-pressed="false">規格化OFF（元の信号）</button></div><p id="graphModeInfo" class="hint"></p>
+      <label id="graphStyleLabel">図のスタイル</label><input id="graphStyle" type="hidden" value="simple"><div class="drag-mode-buttons" role="group" aria-labelledby="graphStyleLabel" data-choice="graphStyle"><button type="button" data-value="simple" aria-pressed="true">横軸と曲線のみ</button><button type="button" data-value="detail" aria-pressed="false">縦軸・横軸を表示</button></div><div id="graphDetails">
+      </div><div class="formgrid"><label>表示開始 [min]<input class="input" id="graphStart" type="number" step="any" value="0"></label><label>表示終了 [min]<input class="input" id="graphEnd" type="number" step="any" value="20"></label></div>
+      <div class="line"><button class="secondary" id="graphSync">解析画面の表示範囲</button><button class="secondary" id="graphReset">全体表示</button></div><p class="hint">ドラッグした枠にズーム / ピンチで拡大・縮小 / ダブルクリックで全体表示</p>
+      <label style="display:flex;gap:6px"><input type="checkbox" id="graphAutoY" checked>縦軸を自動調整</label><div class="formgrid"><label>縦軸の最小値<input id="graphYMin" class="input" type="number" step="any" value="0"></label><label>縦軸の最大値<input id="graphYMax" class="input" type="number" step="any" value="150"></label></div>
+      <div id="graphBaselineSection" hidden><h3>横軸の基準線（従来方式）</h3>
+      <label style="display:flex;align-items:center;gap:6px"><input id="graphBaseline" type="checkbox" checked> 始点・終点で補正して横軸を0にする</label>
+      <div class="formgrid"><label>始点 [min]<input class="input" id="graphBaseStart" type="number" step="any" value="0.1"></label><label>終点 [min]<input class="input" id="graphBaseEnd" type="number" step="any" value="18"></label></div>
+      <p class="hint">始点と終点の信号を結ぶ直線で補正します。解析条件は変わりません。</p></div>
+<section class="graph-output" id="graphTitleSettings"><h3>グラフ内タイトル</h3><label>タイトル<textarea class="input" id="graphTitle" maxlength="500" rows="2" placeholder="例：GPC(CHCl3)"></textarea></label><input id="graphTitleFormat" type="hidden" value="[]"><div class="line"><span>選択した文字：</span><button class="secondary" type="button" data-title-script="normal">標準</button><button class="secondary" type="button" data-title-script="sub">下付き x₂</button><button class="secondary" type="button" data-title-script="super">上付き x²</button></div><div class="line"><label><input id="graphTitleAutoFit" type="checkbox" checked>枠を文字に合わせる</label><button class="secondary" id="graphTitleFit">枠を合わせる</button></div><div class="formgrid"><label>文字サイズ [px]<input class="input" id="graphTitleSize" type="number" min="12" max="160" value="54"></label><label>フォント<select class="input" id="graphTitleFont"><option value="system">システム標準</option><option value="Arial">Arial</option><option value="Helvetica">Helvetica</option><option value="Times">Times New Roman</option><option value="Georgia">Georgia</option><option value="Courier">Courier New</option></select></label><label>枠の幅 [px]<input class="input" id="graphTitleWidth" type="number" min="24" max="2200" value="400"></label><label>枠の高さ [px]<input class="input" id="graphTitleHeight" type="number" min="24" max="1000" value="100"></label><label>左右位置 [px]<input class="input" id="graphTitleX" type="number" min="-2400" max="2400" value="0"></label><label>上下位置 [px]<input class="input" id="graphTitleY" type="number" min="-6000" max="6000" value="0"></label></div><div class="line"><label><input type="checkbox" id="graphTitleBorder">枠線を表示</label><button class="secondary" id="graphTitleReset">タイトル位置を戻す</button></div></section><section class="graph-output graph-appearance" id="graphAppearance"><h3>線・文字の設定</h3>      <div class="formgrid"><label>横軸の線幅 [px]<input class="input" id="graphAxisWidth" type="number" min="0.5" max="20" step="0.5" value="3"></label><label>曲線の線幅 [px]<input class="input" id="graphCurveWidth" type="number" min="0.5" max="20" step="0.5" value="4"></label></div>
+      <div class="formgrid"><label>横軸の数字間隔 [min]<input class="input" id="graphTickInterval" type="number" min="1" step="1" placeholder="自動"></label><label>目盛り数字のサイズ [px]<input class="input" id="graphTickSize" type="number" min="12" max="96" step="1" value="42"></label><label>横軸ラベルのサイズ [px]<input class="input" id="graphLabelSize" type="number" min="12" max="96" step="1" value="42"></label></div>
+      <div class="formgrid"><label>軸ラベルの左右位置 [px]<input class="input" id="graphLabelX" type="number" min="-2400" max="2400" step="1" value="0"></label><label>軸ラベルの上下位置 [px]<input class="input" id="graphLabelY" type="number" min="-1400" max="1400" step="1" value="0"></label></div>
+      <button class="secondary" id="graphLabelReset">軸ラベルの位置を戻す</button><p class="hint">横軸ラベルをドラッグして移動できます。</p>
+      <label for="graphFont">フォント</label><select id="graphFont"><option value="system">システム標準</option><option value="Arial">Arial</option><option value="Helvetica">Helvetica</option><option value="Times">Times New Roman</option><option value="Georgia">Georgia</option><option value="Courier">Courier New</option></select>
+      <p class="hint">文字サイズ・線幅は出力画像での値です。</p>
+
+</section><div class="graph-options graph-output">
+        <label><input type="checkbox" id="graphOverlay" checked> 読み込んだ全データを重ねる</label>
+        <label><input type="checkbox" id="graphAxes" checked> 軸・数値を表示（詳細表示のみ）</label>
+        
+        <label><input type="checkbox" id="graphLegend"> ファイル名の凡例を表示</label>
+      </div><div class="line graph-output"><label>凡例の文字サイズ [px]<input class="input" id="graphLegendSize" type="number" min="12" max="96" value="42" style="width:90px"></label><label>凡例の左右位置 [px]<input class="input" id="graphLegendX" type="number" min="-2400" max="2400" value="0" style="width:100px"></label><label>凡例の上下位置 [px]<input class="input" id="graphLegendY" type="number" min="-1400" max="1400" value="0" style="width:100px"></label><button class="secondary" id="graphLegendReset">凡例の位置を戻す</button></div>
+      <p class="hint">表示設定は分子量計算に影響しません。</p>
+<p id="graphSource" class="hint"></p>
+    </section>
+    <section class="card graph-preview"><div class="plot-head"><h3>出力プレビュー</h3><div id="graphDragMode" class="drag-mode-buttons" role="group" aria-label="概形のドラッグ操作" data-mode="zoom"><button type="button" id="graphDragZoom" aria-pressed="true">枠でズーム</button><button type="button" id="graphDragPeak" aria-pressed="false">最大100のピーク範囲を選択</button></div></div><div id="graphEmpty" class="graph-empty">「CRM / CSVを読み込む」から測定データを選んでください。</div><div class="graph-canvas-wrap"><input type="hidden" id="graphNormStart" value=""><input type="hidden" id="graphNormEnd" value=""><canvas id="graphCanvas" width="2400" height="1400" aria-label="保存・コピーするクロマトグラム画像" hidden></canvas><textarea id="graphTitleInlineEditor" class="title-inline-editor" aria-label="タイトルを直接編集" hidden></textarea><div id="graphTitleInlineTools" class="title-inline-tools" hidden><button class="secondary" data-title-script="normal">標準</button><button class="secondary" data-title-script="sub">下付き x₂</button><button class="secondary" data-title-script="super">上付き x²</button><button class="primary" id="graphTitleEditDone">完了</button><span id="graphTitleInlinePreview" aria-label="装飾プレビュー" style="flex-basis:100%;color:#172e4e"></span></div><div id="graphTitleHandle" class="axis-label-handle" role="button" tabindex="0" aria-label="タイトルを移動" title="ドラッグで移動" hidden></div><div id="graphTitleResize" class="title-resize-handle" role="button" tabindex="0" aria-label="タイトル枠の大きさを変更" title="ドラッグで枠の大きさを変更" hidden></div><div id="graphLegendHandle" class="axis-label-handle" role="button" tabindex="0" aria-label="凡例を移動" title="ドラッグで移動 / ダブルクリックで初期位置" hidden></div><div id="graphLabelHandle" class="axis-label-handle" role="button" tabindex="0" aria-label="横軸ラベルを移動。矢印キーで微調整、Escapeでドラッグ取消" title="ドラッグで移動 / ダブルクリックで初期位置" hidden></div></div><div class="line graph-output"><button class="primary" id="graphSave" disabled>PNG保存</button><button class="primary" id="graphCopy" disabled>画像をコピー</button><button class="secondary" id="graphCSV" disabled>規格化CSV</button><button class="secondary" id="graphProjectSave">プロジェクト保存</button><button class="secondary" id="graphProjectOpen">プロジェクトを開く</button><input id="graphProjectInput" type="file" accept=".json" hidden></div><div class="line graph-output"><label><input type="checkbox" id="graphAutoNormalize" checked>ズーム時に表示範囲で自動規格化</label></div><div class="line graph-output" id="graphPeakControls"><label>最大100のピーク範囲 [min]<input class="input" id="graphPeakStart" type="number" step="any" placeholder="自動" style="width:100px"></label><label>〜<input class="input" id="graphPeakEnd" type="number" step="any" placeholder="自動" style="width:100px"></label><button class="secondary" id="graphPeakClear">ピーク範囲を自動に戻す</button></div><div class="line graph-output">      <label>基準の合わせ方<select class="input" id="graphNormChoice"><option value="start">開始点を0・最大を100</option><option value="endpoints">両端の基準線で補正・最大を100</option></select></label><button class="secondary" id="graphNormalizeRange">この範囲で基準を合わせる</button><input type="hidden" id="graphNormMethod" value="start"><p class="hint">自動規格化をOFFにすると、ズーム時も規格化の基準を維持します。</p></div><div class="line graph-output"><input type="checkbox" id="graphGuides" hidden><button class="secondary" id="graphGuideToggle" aria-pressed="false">縦目盛線：OFF</button><label>間隔 [min] <input class="input" id="graphGuideInterval" type="number" min="0.001" step="any" value="1" style="width:90px"></label><input type="checkbox" id="graphGrid" hidden><button class="secondary" id="graphHorizontalToggle" aria-pressed="false">横目盛線：OFF</button><label>縦方向の間隔 <input class="input" id="graphHorizontalInterval" type="number" min="0.001" step="any" value="20" style="width:90px"></label><label>補助線の太さ [px]<input class="input" id="graphGuideWidth" type="number" min="0.5" max="20" step="0.5" value="2" style="width:90px"></label><label>補助線の濃さ [%]<input class="input" id="graphGuideOpacity" type="number" min="0" max="100" step="5" value="55" style="width:90px"></label><label>グラフ領域の横：縦 <select class="input" id="graphAspect"><option value="">標準</option><option value="2">2：1</option><option value="1.7777777778">16：9</option><option value="1.3333333333">4：3</option><option value="1">1：1</option><option value="0.75">3：4</option></select></label></div><div id="graphStatus" class="hint" role="status" aria-live="polite"></div></section>
+  </div>
+</section>
+<div id="sessionStatus" class="session-error" role="alert" hidden></div>
+<div id="helpPanel" class="help-overlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+<section class="help-content"><div class="help-heading"><img src="app-icon.png" alt="" width="48" height="48"><div><h2 id="helpTitle">Chromato BRO ヘルプ</h2><span>バージョン 26.10.21 · GPC/SECデータ解析ソフトウェア</span></div><button id="helpClose" class="secondary">閉じる</button></div>
+<h3>はじめに・画面の切り替え</h3>
+<p>「概形表示」「分子量計算」「検量線作成」を右上のボタンで切り替えます。初期の順序はこの並びです。ボタンを長押し、または右ボタンでドラッグすると並べ替えられます。再起動時は、データと設定を復元して左端の画面を開きます。</p>
+<h3>概形表示：読み込みと重ね合わせ</h3>
+<p>「CRM / CSVを読み込む」で複数ファイルを選択できます。一覧で表示・非表示、色、凡例名、y軸移動量を変更します。「並べ替え」のドラッグ、または↑↓で順番を変えると、曲線と凡例の順番にも反映されます。「削除」「全て削除」は一覧から取り除くだけで、元のファイルや検量線は削除しません。</p>
+<p>初期表示は全体表示・「横軸と曲線のみ」・凡例なしです。横軸名は <code>elution time (min)</code> です。</p>
+<h3>規格化と基準の合わせ方</h3>
+<p>標準の「試料ごとに規格化（最大100）」では、各試料の開始信号を0、最大ピークを100に揃えます。濃度や検出強度が違う試料も個別に規格化します。y軸移動量は規格化後に加算します。これらは表示専用で、元データと分子量計算を変更しません。</p>
+<ul><li><strong>ピークを指定：</strong>「最大100のピーク範囲を選択」を選んでグラフを横にドラッグするか、グラフ下の「最大100のピーク範囲 [min]」へ入力します。各試料の指定範囲内の最大ピークが100になります。基準線と表示範囲は変わりません。範囲外の高いピークは100を超えることがあります。</li>
+<li><strong>表示範囲を基準にする：</strong>グラフ下で「開始点を0・最大を100」または「両端の基準線で補正・最大を100」を選び、「この範囲で基準を合わせる」を押します。</li>
+<li><strong>ズーム時の自動規格化：</strong>初期ONです。ONではズーム先の範囲で規格化し直します。OFFでは規格化値を固定して表示範囲だけを変えます。右ドラッグによる横移動では再規格化しません。</li></ul>
+<p>「概形表示方法」から、始点・終点の基準線補正や元信号表示へ切り替えられます。開始信号より小さい値は負になります。必要に応じて比較範囲で基準を合わせるか、両端の基準線による補正を選んでください。負の値は内部データに保持します。基準線補正の始点・終点は、分子量計算とは独立して設定できます。</p>
+<h3>グラフの拡大・移動</h3>
+<p>「枠でズーム」を選び、左ドラッグで囲んだ範囲を拡大します。ピンチで拡大・縮小、右ボタンを押したままドラッグすると横移動できます。「全体表示」またはダブルクリックで全体へ戻します。表示開始・終了、縦軸の最小・最大値も数値入力できます。範囲選択を取り消すにはEscapeを押します。</p>
+<h3>タイトル・凡例・図のスタイル</h3>
+<p>左欄でタイトル、線幅、フォント、目盛り数字と横軸ラベルのサイズ、凡例などを変更できます。左欄はグラフと独立してスクロールします。横軸の数字間隔は空欄で自動、1以上の整数で指定します。数字と軸ラベルの標準サイズは42pxです。文字サイズ・線幅の数値は出力画像を基準とします。</p>
+<p>画像内のタイトルはダブルクリックで直接編集できます。文字を選び「下付き」「上付き」で <code>CHCl₃</code> などを表現します。Enterまたは「完了」で確定、Shift＋Enterで改行、Escapeで取り消します。タイトルをドラッグすると移動、右下の角で枠サイズを変更できます。「枠を文字に合わせる」や「枠を合わせる」で余白を調整します。</p>
+<p>「ファイル名の凡例を表示」をONにすると凡例が画像内に表示されます。凡例名は測定一覧で編集でき、文字サイズ・位置は左欄で変更、画像内ではドラッグで移動できます。</p>
+<p>グラフ下では縦目盛線・横目盛線を個別にON/OFFできます。どちらも点線です。縦の間隔はmin、横の間隔は縦軸の単位（規格化時は%）で指定します。太さ・濃さは両方向に共通です。「グラフ領域の横：縦」で縦横比を変更できます。</p>
+<h3>画像・プロジェクトの保存と読み込み</h3>
+<p>概形グラフの下に「PNG保存」「画像をコピー」「プロジェクト保存」「プロジェクトを開く」があります。画像は現在の表示・タイトル・凡例・補助線を反映した白背景です。コピー後は貼り付け先で⌘Vを押します。規格化時は「規格化CSV」も出力できます。</p>
+<p>プロジェクトJSONには測定データ、重ね合わせ、色、順番、基準範囲、タイトルの文字装飾、凡例などを保存します。「プロジェクトを開く」で復元できます。分子量計算の保存欄にも同じプロジェクト操作があります。自動保存とは別に、研究記録としてプロジェクトを保存してください。</p>
+<h3>分子量計算</h3>
+<p>CRM / CSVを読み込み、積分範囲とベースライン、適用検量線を設定します。「積分範囲を選択」「ベースライン範囲を選択」を選んでドラッグするか、時刻を入力します。ベースラインは積分範囲の両端を結ぶ方法、独立した始点・終点を結ぶ方法、傾き・切片の入力、0基準から選べます。</p>
+<p>Mn・Mw・Mz・Mpはg/mol、分散度ĐはMw / Mnです。積分レポートで積分区間、ベースライン、適用したPSstandard検量線の測定日時・検出器、外挿の有無を確認できます。結果CSV、分布CSV、PNG、プロジェクトJSONを保存し、印刷 / PDF保存も利用できます。</p>
+<h3>検量線作成・保存・適用</h3>
+<p>ANLのRI / UVを選び、標準試料の10ピークの保持時間を読み込みます。標準試料名・検量線名・測定日はファイル名から取得します。時刻は推測しません。新しいANLへ読み替えても入力済み分子量は行順で保持するため、各ピークとの対応を確認してください。</p>
+<p>各行の既知分子量を編集し、「使用」で近似に含める点を選択します。行の追加・削除、標準点CSV、測定データのピーク取り込みにも対応します。1〜3次の「検量線を計算」で係数・R²・RMSE・残差を確認し、「この検量線を解析に適用」で反映します。計算・保存だけでは解析の検量線は変わりません。</p>
+<p>分子量計算の「現在の検量線を保存」、検量線作成ページ最下部の保存操作で、複数の検量線を保持できます。分子量計算の「保存した検量線」から選択して適用します。検量線JSONはファイルへの保存と再読み込みにも対応します。</p>
+<h3>自動保存とショートカット</h3>
+<p>測定データ・適用検量線・編集途中の標準試料・表示設定・ページ順序を自動保存します。終了時に保存を待ち、再起動後も復元します。復元や保存のエラー時は原本を上書きしません。元の測定ファイルを変更することもありません。</p>
+<p>⌘O：現在の画面で読み込み、⌘S：プロジェクト／検量線保存、⌘1：分子量計算、⌘2：検量線作成、⌘3：概形表示、⌘0：全体表示。これらの画面番号はボタンを並べ替えても固定です。</p>
+<p>自動保存先：<code>~/Library/Application Support/jp.gpcmac.analyzer.native/session-v1.json</code>。前回分は <code>session-v1.previous.json</code> です。</p>
+<h3>最新版へのアップデート</h3>
+<p>更新先はアプリに組み込み済みで、URLの入力・変更は不要です。メニューバーの「アップデートを確認…」を選び、新版があればダウンロードして「更新して再起動」を実行します。Macは「Chromato BRO」メニュー、Windowsは「ヘルプ」メニューにあります。データ・検量線・設定は引き継がれます。</p>
+<p>Macはアプリケーションフォルダへ移動して起動してください。WindowsはZIPを「すべて展開」し、フォルダ全体を保管して中のEXEを起動します。EXEだけを取り出さないでください。更新時はアプリ保存先への書き込み権限が必要です。</p>
+<h3>対応形式と解析上の制約</h3>
+<p>CRM・ANLは確認できたChromato-PRO形式に対応します。未知の形式、チャンネル、時間軸、信号スケールは元ソフト／対応CSVと照合してください。Chromato-PROおよびメーカーの公式製品ではありません。ANLはピーク情報を読み込む形式で、クロマトグラムの波形は表示しません。CSVは保持時間（min）と信号を読み込み、Rt / Concヘッダーにも対応します。</p>
+<p>通常解析は正の補正信号を質量濃度に比例すると仮定した相対分子量です。負信号を0にクリップし、時間幅を考慮して積分します。標準物質、検出器、カラム、溶離液、温度の違いは自動補正されません。初期検量線は測定条件への適合を保証しません。外挿の有無は積分レポートで確認できます。測定条件に合う検量線を適用し、計算不能や非物理的な結果の警告を確認してください。</p>
+<p>解析は端末内で完結し、オフラインで使用できます。インターネット接続はアップデートの確認・ダウンロード時に使用します。</p>
+</section></div>
+<script src="native-export.js"></script>
+<script src="gpc-core.js"></script>
+<script src="calibration-meta.js"></script>
+<script src="figure-data.js"></script>
+<script src="title-text.js"></script>
+<script src="figure-renderer.js"></script>
+<script src="plot-interaction.js"></script>
+<script src="app.js"></script>
+<script src="calibration.js"></script>
+<script src="graph-export.js"></script>
+<script src="product-ui.js"></script>
+<script src="page-order.js"></script>
+<script src="calibration-library.js"></script>
+<script src="session.js"></script>
+</body></html>

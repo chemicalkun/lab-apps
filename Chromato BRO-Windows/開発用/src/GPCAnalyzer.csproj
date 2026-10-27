@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <AssemblyName>Chromato BRO</AssemblyName><RootNamespace>GPCAnalyzer</RootNamespace>
+    <DebugType>none</DebugType><Version>26.10.21</Version><FileVersion>26.10.21.43</FileVersion><Product>Chromato BRO</Product>
+    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup><Content Include="update-public.der"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content></ItemGroup>
+  <ItemGroup><PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" /></ItemGroup>
+  <ItemGroup><Content Include="../Resources/www/**/*" Exclude="../Resources/www/**/.DS_Store"><Link>www/%(RecursiveDir)%(Filename)%(Extension)</Link><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content><Content Include="AppIcon.png"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content></ItemGroup>
+  <Target Name="RemoveUnusedWpfReference" BeforeTargets="ResolveAssemblyReferences"><ItemGroup><Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" /></ItemGroup></Target>
+  <ItemGroup><Content Include="../ThirdPartyNotices/*"><Link>ThirdPartyNotices/%(Filename)%(Extension)</Link><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content></ItemGroup>
+</Project>

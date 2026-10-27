@@ -1,0 +1,648 @@
+const log = [], $ = id => document.getElementById(id);
+const check = (condition, message) => { if (!condition) throw Error(message); };
+const pass = message => { window.__nativeTestStep=message; log.push('PASS: ' + message); };
+const wait = async test => { for(let i=0;i<200;i++){if(test())return;await new Promise(r=>setTimeout(r,25));}throw Error('Timed out waiting for UI'); };
+window.__errors=[]; window.addEventListener('error',e=>window.__errors.push(e.message));
+window.addEventListener('unhandledrejection',e=>window.__errors.push(String(e.reason)));
+const makeFile = name => new File([Uint8Array.from(atob(fixtures[name]), c=>c.charCodeAt(0))],name);
+const input = async (id, files) => { const dt = new DataTransfer(); files.forEach(f=>dt.items.add(f));$(id).files=dt.files;await $(id).onchange({target:$(id)}); };
+const exportFile = async (button, name) => { const count=window.__nativeExportCount||0;$(button).click();await wait(()=>(window.__nativeExportCount||0)>count && window.__nativeExportNames?.includes(name)); };
+const result = ()=>window.__GPC_APP_TEST__.results;
+check($('mn') && window.GPC_APP_BRIDGE, 'Application initialization');
+check($('graphAutoNormalize').checked,'Auto normalization defaults ON');$('graphAutoNormalize').checked=false;
+check(performance.getEntriesByType('resource').every(e=>e.name.startsWith('file:')), 'Bundled resources only');
+let blocked=false;try{await fetch('https://example.invalid/gpc-offline-check');}catch(e){blocked=true;}
+check(blocked, 'CSP blocks network connections');
+check(window.GPCPageOrder.snapshot().join(',')==='navGraph,navAnalysis,navCalibration'&&!$('graphPage').hidden,'Default page order and first launch page '+JSON.stringify({order:window.GPCPageOrder.snapshot(),hidden:$('graphPage').hidden,session:typeof window.GPCSession,library:typeof window.GPCCalibrationLibrary,status:$('sessionStatus').textContent}));
+$('navGraph').click();
+check(!$('graphPage').hidden && $('graphCopy').disabled && $('graphSave').disabled,'Empty graph page prevents export');
+await input('graphFileInput',[makeFile('41.crm')]);
+check(!$('graphPage').hidden&&!$('graphCanvas').hidden&&$('graphFiles').children.length===1,'Load CRM directly from empty figure page');
+check($('graphImportStatus').textContent.includes('1ファイル読込完了'),'Visible figure import status');
+check($('graphMode').value==='normalize'&&+$('graphStart').value===0&&+$('graphEnd').value===20,'Default normalized full range');
+check(+$('graphYMin').value===0&&+$('graphYMax').value===150&&+$('graphTickSize').value===42&&+$('graphLabelSize').value===42,'Default scale and 42px fonts');
+const initialNormalized=window.__GPC_GRAPH_TEST__.prepared.datasets[0];
+check(Math.abs(initialNormalized.normalization.s0-.523)<1e-10&&Math.abs(Math.max(...initialNormalized.signal)-100)<1e-10,'Native CRM normalized peak');
+check($('graphStyle').value==='simple'&&!$('graphLegend').checked&&$('graphAutoY').checked,'Default horizontal axis only, no legend, automatic whole-curve bounds');
+check($('graphCSV')&&$('graphSave').closest('.graph-preview')&&$('graphCopy').closest('.graph-preview'),'Image actions directly under preview; normalized CSV action available');
+check($('graphSave').getBoundingClientRect().top>=$('graphCanvas').getBoundingClientRect().bottom,'Save is below graph');
+for(const [group,values] of [['graphMode',['raw','normalize','baseline']],['graphStyle',['detail','simple']]])for(const value of values){
+  const button=document.querySelector(`[data-choice="${group}"] [data-value="${value}"]`);button.click();
+  check($(group).value===value&&button.getAttribute('aria-pressed')==='true',`Visible ${group} button ${value}`);
+  check(document.querySelectorAll(`[data-choice="${group}"] [aria-pressed="true"]`).length===1,'One selected option');
+}
+$('graphReset').click();
+
+$('navAnalysis').click();
+check($('graphPage').hidden,'Return from figure page');
+await input('fileInput',[makeFile('41.crm')]);
+check(Math.abs(result().mn-2875.803)<.001,'Research Mn');
+check(result().mz>result().mw && !result().physicalWarning,'Research moments');
+check($('mn').textContent.includes('2,875'),'Rendered results');
+// CRM fixture recognition is diagnostic metadata, not a calculation warning.
+const crmState=window.__GPC_APP_TEST__.state;
+const loadedCRM=crmState.datasets[crmState.selected],wasReference=loadedCRM.reference;
+loadedCRM.reference=false;window.GPC_APP_BRIDGE.refresh();
+check(!$('notice').textContent.includes('未照合のCRM'),'Ordinary CRM does not show fixture-recognition notice');
+check(Math.abs(result().mn-2875.803)<.001,'CRM recognition flag does not change numerical results');
+// A real calculation/input error must remain visible (covered below).
+loadedCRM.reference=wasReference;window.GPC_APP_BRIDGE.refresh();
+pass('CRM file input → normal analysis and visible results');
+await input('fileInput',[new File(['bad'],'bad.crm')]);
+check($('readInfo').className==='error' && $('readInfo').textContent.includes('短すぎ'),'Import error remains visible');
+check(result().mn>0,'Import failure preserves prior data');
+$('navCalibration').click();
+check(!$('calibrationPage').hidden && $('analysisPage').hidden,'Calibration navigation');
+const riName=Object.keys(fixtures).find(n=>n.includes('_RI_'));
+const uvName=Object.keys(fixtures).find(n=>n.includes('_UV_'));
+for(const [name,t] of [[riName,4.93],[uvName,4.87]]) {
+  await input('calANLFile',[makeFile(name)]);
+  check(document.querySelectorAll('.standard-time').length===10,'ANL 10 rows');
+  check(+document.querySelector('.standard-time').value===t,'ANL retention time');
+  check([...document.querySelectorAll('.standard-weight')].every(el=>el.value===''),'Mass inputs initially blank');
+}
+await input('calANLFile',[makeFile(riName)]);
+const masses=[2610000,1410000,809000,370000,153000,52500,16500,7350,2600,1200];
+[...document.querySelectorAll('.standard-weight')].forEach((el,i)=>{el.value=masses[i];el.dispatchEvent(new Event('input',{bubbles:true}));});
+await input('calANLFile',[makeFile(uvName)]);check([...document.querySelectorAll('.standard-weight')].every((el,i)=>+el.value===masses[i]),'Known masses survive new ANL');
+check(!document.querySelector('input.standard-name')&&$('calName').type==='hidden'&&$('calNameDisplay').textContent===uvName,'Names come from filename without editing fields');
+await input('calANLFile',[makeFile(riName)]);
+$('calMeasuredTime').value='14:23:45';$('calMeasuredTime').oninput();
+$('calCalculate').click();
+check(!$('calApply').disabled && window.__GPC_CAL_TEST__.preview.r2>.99,'Manual masses and regression');
+$('calApply').click();
+check(window.GPC_APP_BRIDGE.getCalibration().name.includes('RI'),'Calibration applied');
+pass('RI and UV ANL imports, 10 editable masses, regression and apply');
+await exportFile('calExportCSV','GPC_calibration_standards.csv');
+await exportFile('calExportJSON','GPC_calibration.json');
+await exportFile('calExportPNG','GPC_calibration_curve.png');
+// Incomplete excluded rows must stay blank through a JSON round trip.
+const savedCal=JSON.stringify({format:'GPCA-calibration-v2',calibration:window.__GPC_CAL_TEST__.preview,standardRows:[...window.__GPC_CAL_TEST__.rows,{name:'未入力',t:null,m:null,used:false}]});
+check(window.GPC_APP_BRIDGE.getCalibration().measuredTime==='14:23:45','Measurement time applied');
+const beforeCalibrationImport=window.__GPC_CAL_TEST__.preview.coefficients.slice();
+await input('calJSONFile',[new File([savedCal],'cal.json')]);
+check(window.__GPC_CAL_TEST__.preview.coefficients.every((v,i)=>Math.abs(v-beforeCalibrationImport[i])<1e-12),'Calibration coefficients preserved by JSON roundtrip');
+check([...document.querySelectorAll('.standard-time')].at(-1).value==='','Blank row preserved');
+check($('calMeasuredTime').value==='14:23:45'&&$('calMeasuredDate').value==='2026-10-01','Calibration date/time JSON roundtrip');
+$('navAnalysis').click();
+check(!$('analysisPage').hidden,'Analysis navigation');
+check(!$('mode')&&!$('excelButton'),'No calculation method selector or Excel verification action');
+check(result().mode==='research'&&result().mn>0&&result().mz>0,'Only physical normal analysis in UI');
+check($('statCalibration').textContent.includes('PSstandard')&&$('statCalibration').textContent.includes('2026/10/01'),'Calibration measurement date and PSstandard in report');
+await exportFile('summaryExport','41_result.csv');
+await exportFile('csvExport','41_distribution.csv');
+await exportFile('jsonExport','GPC_project.json');
+await exportFile('pngExport','41_chromatogram.png');
+pass('Normal analysis, calibration provenance, CSV / JSON / PNG via Swift bridge');
+const state=window.__GPC_APP_TEST__.state;
+const project={format:'GPCA-project-v1',datasets:state.datasets,selected:0,calibration:state.cal,options:{mode:'excel',start:7.8,end:10.4,baselineType:'endpoints'}};
+await input('jsonFile',[new File([JSON.stringify(project)],'project.json')]);
+check(result().mode==='research','Legacy Excel project migrates to normal analysis');
+const legacyWorkspace=window.GPCSession.workspace();legacyWorkspace.controls.mode='excel';window.GPCSession.restoreWorkspace(legacyWorkspace);check(result().mode==='research','Legacy mode preference cannot reactivate Excel mode');
+const prior=result().mn;
+project.datasets=structuredClone(project.datasets);project.datasets[0].times[1]=null;
+await input('jsonFile',[new File([JSON.stringify(project)],'broken.json')]);
+check($('readInfo').textContent.includes('エラー') && result().mn===prior,'Malformed project rejected atomically');
+$('baseMode').value='manual';$('baseSlope').value='0';$('baseIntercept').value='1000000';$('update').click();
+check(result()===null && $('errBox').textContent.includes('有効な'),'Invalid integration visibly rejected');
+$('baseMode').value='endpoints';$('update').click();
+$('navCalibration').click();
+await input('calCSVFile',[new File(['time,mass\n1,-2\n2,3\n3,4\n4,5'],'bad.csv')]);
+check($('calError').className==='cal-error' && $('calError').textContent.includes('正の'),'Calibration CSV error persists');
+$('calRestore').click();
+check($('calANLPeaks').hidden,'Obsolete ANL plot cleared');
+$('navAnalysis').click();
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Project restoration, corrupt input rejection, calculation errors, no JavaScript errors');
+// Figure settings operate on a copy of the source and leave scientific results unchanged.
+await input('fileInput',[new File(['time,signal\n0,0\n10,30\n20,0'],'比較.csv')]);
+$('files').querySelector('.file-item').click();
+const beforeFigure=JSON.stringify({datasets:window.__GPC_APP_TEST__.state.datasets,result:result(),cal:window.GPC_APP_BRIDGE.getCalibration()});
+$('navGraph').click();
+check(!$('graphPage').hidden && $('analysisPage').hidden && $('calibrationPage').hidden,'Dedicated figure page');
+check(!$('graphCopy').disabled && !$('graphSave').disabled,'Figure export enabled');
+check($('graphBaseline').checked&&+$('graphBaseStart').value===.1&&+$('graphBaseEnd').value===18,'Default figure baseline 0.1 to 18 min');
+check($('graphCanvas').width===2400 && $('graphCanvas').height===1400,'High resolution canvas');
+check($('graphSource').textContent.includes('2 ファイル'),'Overlay source');
+$('graphTitle').value='ポリマーのGPCクロマトグラム';$('graphTitle').dispatchEvent(new Event('input'));
+$('graphStart').value='6';$('graphEnd').value='12';$('graphEnd').dispatchEvent(new Event('input'));
+await exportFile('graphSave','41_graph.png');
+$('graphCopy').click();await wait(()=>$('graphStatus').textContent.startsWith('画像をコピーしました'));
+check(!$('graphCopy').disabled,'Copy completion enables button');
+let invalidCopyRejected=false;
+try { await window.webkit.messageHandlers.copyImage.postMessage({base64:btoa('not a PNG')}); } catch(e) { invalidCopyRejected=true; }
+check(invalidCopyRejected,'Native clipboard rejects invalid image');
+for(const id of ['graphAxes','graphGrid','graphLegend']){$(id).checked=false;$(id).dispatchEvent(new Event('input'));}
+await exportFile('graphSave','41_graph.png');
+$('graphEnd').value='5';$('graphEnd').dispatchEvent(new Event('input'));
+check($('graphCopy').disabled && $('graphSave').disabled && $('graphCanvas').hidden,'Invalid range cannot export stale image');
+$('graphStart').value='50';$('graphEnd').value='60';$('graphEnd').dispatchEvent(new Event('input'));
+check($('graphCopy').disabled && $('graphEmpty').textContent.includes('ありません'),'Empty range cannot export');
+$('graphSync').click();
+check($('graphStart').value==='0' && $('graphEnd').value==='20','Analysis view range restored');
+$('navCalibration').click();check($('graphPage').hidden && !$('calibrationPage').hidden,'Figure to calibration navigation');
+$('navAnalysis').click();
+check(JSON.stringify({datasets:window.__GPC_APP_TEST__.state.datasets,result:result(),cal:window.GPC_APP_BRIDGE.getCalibration()})===beforeFigure,'Figure operations preserve source, analysis and calibration');
+$('navGraph').click();
+for(const id of ['graphAxes','graphGrid','graphLegend']){$(id).checked=true;$(id).dispatchEvent(new Event('input'));}
+$('graphStart').value='6';$('graphEnd').value='12';$('graphEnd').dispatchEvent(new Event('input'));
+await exportFile('graphSave','41_graph.png');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Figure PNG export, native image clipboard, overlay, appearance controls, range errors and unchanged analysis');
+
+const near=(a,b)=>Math.abs(a-b)<1e-6*Math.max(1,Math.abs(b));
+function cssFrame(id){
+  const c=$(id),r=c.getBoundingClientRect();
+  if(id==='chromChart'){const v=window.__GPC_APP_TEST__.view;return {left:v.m.l,top:v.m.t,width:v.pw,height:v.ph,xmin:v.xmin,xmax:v.xmax,ymin:v.ymin,ymax:v.ymax};}
+  const f=window.__GPC_GRAPH_TEST__.frame;
+  return {...f,left:f.left*r.width/c.width,top:f.top*r.height/c.height,width:f.width*r.width/c.width,height:f.height*r.height/c.height};
+}
+function pointer(c,type,x,y){const r=c.getBoundingClientRect();c.dispatchEvent(new PointerEvent(type,{pointerId:1,button:0,buttons:type==='pointerup'?0:1,clientX:r.left+x,clientY:r.top+y,bubbles:true}));}
+function box(id){
+  const c=$(id),f=cssFrame(id),capture=c.setPointerCapture;
+  c.setPointerCapture=()=>{}; // Synthetic events have no OS active pointer to capture.
+  const a={x:f.left+f.width*.25,y:f.top+f.height*.25},b={x:f.left+f.width*.75,y:f.top+f.height*.75};
+  pointer(c,'pointerdown',a.x,a.y);const image=c.toDataURL();pointer(c,'pointermove',b.x,b.y);
+  check(c.toDataURL()===image,'Selection overlay does not enter image pixels');
+  check(!c.parentElement.querySelector('.plot-selection').hidden,'Selection rectangle visible');
+  pointer(c,'pointerup',b.x,b.y);c.setPointerCapture=capture;
+  check(c.parentElement.querySelector('.plot-selection').hidden,'Selection rectangle cleared');
+  return f;
+}
+function pinch(id,scale){
+  const c=$(id),f=cssFrame(id),r=c.getBoundingClientRect();
+  for(const type of ['gesturestart','gesturechange','gestureend']){
+    const e=new Event(type,{bubbles:true,cancelable:true});
+    Object.defineProperties(e,{clientX:{value:r.left+f.left+f.width/2},clientY:{value:r.top+f.top+f.height/2},scale:{value:type==='gesturestart'?1:scale}});c.dispatchEvent(e);
+  }
+}
+const integrationBefore=[$('start').value,$('end').value];
+const numericalBefore=JSON.stringify(result());
+for(const [id,nav,reset] of [['chromChart','navAnalysis','resetView'],['graphCanvas','navGraph','graphReset']]){
+  $(nav).click();$(reset).click();
+  const f=box(id),after=cssFrame(id);
+  check(near(after.xmax-after.xmin,(f.xmax-f.xmin)/2),'Rectangle zoom X');
+  check(near(after.ymax-after.ymin,(f.ymax-f.ymin)/2),'Rectangle zoom Y');
+  pinch(id,2);const pinched=cssFrame(id);
+  check(near(pinched.xmax-pinched.xmin,(after.xmax-after.xmin)/2),'WebKit pinch in');
+  pinch(id,.5);check(near(cssFrame(id).xmax-cssFrame(id).xmin,after.xmax-after.xmin),'WebKit pinch out');
+  const c=$(id),r=c.getBoundingClientRect(),v=cssFrame(id);
+  const capture=c.setPointerCapture;c.setPointerCapture=()=>{};
+  const sendPan=(type,dx)=>c.dispatchEvent(new PointerEvent(type,{pointerId:9,button:2,buttons:type==='pointerup'?0:2,clientX:r.left+v.left+v.width*(.5+dx),clientY:r.top+v.top+v.height*.5,bubbles:true}));
+  sendPan('pointerdown',0);sendPan('pointermove',.1);sendPan('pointerup',.1);c.setPointerCapture=capture;
+  const moved=cssFrame(id);check(near(moved.xmax-moved.xmin,v.xmax-v.xmin)&&near(moved.xmin,v.xmin-(v.xmax-v.xmin)*.1),'Right drag shifts X without changing width');
+  check(c.parentElement.querySelector('.plot-selection').hidden&&c.style.cursor==='','Pan leaves no selection or grabbing cursor');
+  c.dispatchEvent(new WheelEvent('wheel',{ctrlKey:true,deltaY:-50,clientX:r.left+v.left+v.width/2,clientY:r.top+v.top+v.height/2,cancelable:true}));
+  check(cssFrame(id).xmax-cssFrame(id).xmin<v.xmax-v.xmin,'Ctrl-wheel pinch route');
+  $(reset).click();check(near(cssFrame(id).xmin,0)&&near(cssFrame(id).xmax,20),'Reset full range');
+}
+check(JSON.stringify(result())===numericalBefore,'Zoom does not change numerical results');
+check(JSON.stringify([$('start').value,$('end').value])===JSON.stringify(integrationBefore),'Zoom does not change integration limits');
+$('navAnalysis').click();$('dragIntegrate').click();box('chromChart');
+check(near(+$('start').value,5)&&near(+$('end').value,15),'Original integration selection remains available');
+$('dragZoom').click();$('start').value=integrationBefore[0];$('end').value=integrationBefore[1];$('update').click();
+await $('pngCopy').onclick();check($('readInfo').textContent.includes('コピーしました'),'Analysis image copy');
+// Inspect drawing commands: simple figures have only X tick labels and the X label.
+const probe=document.createElement('canvas'),probeContext=probe.getContext('2d'),labels=[];
+const originalText=probeContext.fillText.bind(probeContext);probeContext.fillText=(text,...args)=>{labels.push(text);originalText(text,...args);};
+window.GPCFigure.draw(probe,window.GPC_APP_BRIDGE.getGraphData(),{simple:true,title:'GRAPH TITLE',axes:true,grid:true,legend:true});
+check(labels.includes('GRAPH TITLE')&&labels.filter(t=>t!=='GRAPH TITLE').slice(0,-1).every(t=>/^-?\d+$/.test(t))&&labels.filter(t=>t!=='GRAPH TITLE').at(-1)==='elution time (min)','Simple figure retains explicit in-graph title and excludes Y labels and legend');
+$('navGraph').click();$('graphStyle').value='simple';$('graphOverlay').checked=false;
+$('graphStart').value='7.5';$('graphEnd').value='10.5';$('graphEnd').dispatchEvent(new Event('input'));
+await exportFile('graphSave','41_graph.png');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Rectangle XY zoom, WebKit pinch in/out, ctrl-wheel, integration mode, clean image export and unchanged numerical results');
+
+$('navAnalysis').click();
+check($('dragZoom').getBoundingClientRect().width>0 && $('dragIntegrate').getBoundingClientRect().width>0,'Both mode buttons always visible');
+$('dragIntegrate').click();check($('dragIntegrate').getAttribute('aria-pressed')==='true'&&$('dragZoom').getAttribute('aria-pressed')==='false','Integration button state');
+$('dragZoom').click();check($('dragZoom').getAttribute('aria-pressed')==='true','Zoom button state');
+const beforeRemove=JSON.stringify(result());
+$('files').querySelectorAll('.file-remove')[1].click();
+check(window.__GPC_APP_TEST__.state.datasets.length===1 && JSON.stringify(result())===beforeRemove,'Remove unselected dataset preserves selected calculation');
+$('files').querySelector('.file-remove').click();
+check(window.__GPC_APP_TEST__.state.selected===-1 && result()===null && $('mn').textContent==='—','Remove last dataset clears results');
+$('navGraph').click();check($('graphCopy').disabled&&$('graphSave').disabled&&$('graphCanvas').hidden,'Deletion clears figure data');
+$('navAnalysis').click();await input('fileInput',[makeFile('41.crm')]);
+await input('fileInput',[new File(['0,0\n10,1\n20,0'],'delete-test.csv')]);
+$('files').querySelector('.file-remove').click();
+check(window.__GPC_APP_TEST__.state.selected===0&&window.__GPC_APP_TEST__.state.datasets[0].name==='delete-test.csv','Remove preceding dataset preserves selection');
+$('files').querySelector('.file-remove').click();await input('fileInput',[makeFile('41.crm')]);
+check(window.__GPC_APP_TEST__.state.datasets.length===1 && result()?.mn>0,'Reimport after deletion');
+$('navGraph').click();check(!$('graphSave').disabled,'Figure restores on reimport');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Visible drag mode buttons, selected/unselected/last dataset deletion, reimport and figure invalidation');
+$('navAnalysis').click();
+$('baseMode').value='range';$('baseStart').value='.1';$('baseEnd').value='18';$('update').click();
+check($('baseRange').getBoundingClientRect().height>0 && result()?.baselineRange.start===.1 && result().baselineRange.end===18,'Separate baseline controls');
+check($('statBaseline').textContent.includes('0.1')&&$('statBaseline').textContent.includes('18'),'Baseline report');
+const rangeResult=result().mn;
+await exportFile('jsonExport','GPC_project.json');
+const rangeProject={format:'GPCA-project-v1',datasets:state.datasets,selected:state.selected,calibration:state.cal,options:{mode:'research',start:+$('start').value,end:+$('end').value,baselineType:'range',baselineStart:.1,baselineEnd:18}};
+$('baseEnd').value='30';$('update').click();
+check(result()===null&&$('errBox').textContent.includes('ベースライン区間'),'Out-of-data baseline error');
+await input('jsonFile',[new File([JSON.stringify(rangeProject)],'range.json')]);
+check(result()?.mn===rangeResult&&$('baseEnd').value==='18','Baseline project restoration');
+rangeProject.options.baselineEnd=30;
+await input('jsonFile',[new File([JSON.stringify(rangeProject)],'invalid-range.json')]);
+check(result()?.mn===rangeResult&&$('readInfo').textContent.includes('エラー'),'Invalid baseline project rejected atomically');
+$('end').value=9.55;$('update').click();
+check(result()?.baselineRange.start===.1&&result().baselineRange.end===18,'Integration change preserves baseline anchors');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Separate baseline interval, visible report, JSON save/restore, integration independence and invalid-range errors');
+// A horizontal drag sets baseline anchors only, in either direction.
+$('resetView').click();
+const baselineIntegration=[$('start').value,$('end').value],baselineCalibration=JSON.stringify(state.cal);
+check(['dragZoom','dragIntegrate','dragBaseline'].every(id=>$(id).getBoundingClientRect().width>0),'All three drag buttons visible');
+$('dragBaseline').click();
+check($('dragBaseline').getAttribute('aria-pressed')==='true'&&$('dragZoom').getAttribute('aria-pressed')==='false'&&$('dragIntegrate').getAttribute('aria-pressed')==='false','Baseline button selected exclusively');
+function horizontalBaseline(from,to,cancel=false){
+ const c=$('chromChart'),f=cssFrame('chromChart'),capture=c.setPointerCapture;
+ c.setPointerCapture=()=>{};
+ const x=t=>f.left+(t-f.xmin)/(f.xmax-f.xmin)*f.width,y=f.top+f.height*.5;
+ pointer(c,'pointerdown',x(from),y);pointer(c,'pointermove',x(to),y);
+ const overlay=c.parentElement.querySelector('.plot-selection');
+ check(!overlay.hidden&&overlay.dataset.mode==='baseline'&&near(parseFloat(overlay.style.height),f.height),'Baseline selection spans plot height');
+ if(cancel)window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
+ pointer(c,'pointerup',x(to),y);c.setPointerCapture=capture;
+ check(overlay.hidden,'Baseline overlay cleared');
+ return f;
+}
+const baselineFrame=horizontalBaseline(.1,18);
+check($('baseMode').value==='range'&&near(+$('baseStart').value,.1)&&near(+$('baseEnd').value,18),'Forward baseline drag sets endpoints');
+check(JSON.stringify([$('start').value,$('end').value])===JSON.stringify(baselineIntegration)&&JSON.stringify(state.cal)===baselineCalibration,'Baseline drag preserves integration and calibration');
+check(near(cssFrame('chromChart').xmin,baselineFrame.xmin)&&near(cssFrame('chromChart').xmax,baselineFrame.xmax),'Baseline drag does not zoom');
+horizontalBaseline(17,.2);
+check(near(result().baselineRange.start,.2)&&near(result().baselineRange.end,17),'Reverse baseline drag sorted');
+horizontalBaseline(3,10,true);
+check(near(result().baselineRange.start,.2)&&near(result().baselineRange.end,17),'Escape cancels baseline edit');
+$('baseMode').value='endpoints';$('update').click();
+check(result().baselineRange===null&&result().curve[0].baseline===result().curve[0].signal&&result().curve.at(-1).baseline===result().curve.at(-1).signal,'Integration endpoint baseline remains available');
+$('dragIntegrate').click();box('chromChart');
+check(near(result().start,5)&&near(result().end,15)&&result().curve[0].baseline===result().curve[0].signal,'Endpoint baseline follows integration drag');
+$('dragBaseline').click();horizontalBaseline(.1,18);
+$('start').value=baselineIntegration[0];$('end').value=baselineIntegration[1];$('update').click();$('dragBaseline').click();
+check(!$('dragBaseline').disabled,'Baseline drag available again in normal analysis');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Baseline drag forward/reverse/cancel, independent intervals, integration-endpoint alternative, visible buttons and normal processing');
+$('navGraph').click();$('graphReset').click();
+const priorFigureNumerics=JSON.stringify(result()),plainFigure=$('graphCanvas').toDataURL();
+for(const [id,value] of [['graphAxisWidth','7'],['graphCurveWidth','9'],['graphTickSize','54'],['graphLabelSize','64'],['graphFont','Times']]){
+ $(id).value=value;$(id).dispatchEvent(new Event('input'));
+ check(!$('graphSave').disabled,'Figure appearance setting accepted: '+id);
+}
+check($('graphCanvas').toDataURL()!==plainFigure,'Appearance settings change rendered pixels');
+check(JSON.stringify(result())===priorFigureNumerics,'Appearance settings preserve numerical analysis');
+$('graphTickSize').value='';$('graphTickSize').dispatchEvent(new Event('input'));
+check($('graphCopy').disabled&&$('graphSave').disabled&&$('graphStatus').className==='error','Invalid figure size blocks export');
+$('graphTickSize').value='54';$('graphTickSize').dispatchEvent(new Event('input'));
+$('graphLabelSize').value='';$('graphLabelSize').dispatchEvent(new Event('input'));
+check($('graphSave').disabled,'Invalid label size blocks export');
+$('graphLabelSize').value='64';$('graphLabelSize').dispatchEvent(new Event('input'));
+check(!$('graphSave').disabled&&$('graphTickSize').value==='54','Label size independent of tick size');
+$('graphStart').value='7.2';$('graphEnd').value='8.7';$('graphStart').dispatchEvent(new Event('input'));
+check(!$('graphSave').disabled,'Fractional display range accepts integer ticks');
+await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+check($('graphStatus').textContent.includes('コピーしました'),'Styled image copy');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Figure font/size/line widths update preview and PNG/copy; integer ticks accept fractional range and preserve analysis');
+const analysisBeforeAxis=JSON.stringify({data:state.datasets,result:result(),cal:state.cal,start:$('start').value,end:$('end').value,baseStart:$('baseStart').value,baseEnd:$('baseEnd').value});
+$('graphReset').click();
+check(!$('graphDragBaseline'),'Removed obsolete baseline drag button');
+$('graphBaseStart').value='.2';$('graphBaseEnd').value='17';$('graphBaseEnd').dispatchEvent(new Event('input'));
+const gc=$('graphCanvas');
+check(window.__GPC_GRAPH_TEST__.frame.baselineCorrected&&window.__GPC_GRAPH_TEST__.frame.axisVisible,'Corrected graph has horizontal zero axis');
+$('graphDragZoom').click();box('graphCanvas');
+check(near(+$('graphBaseStart').value,.2)&&near(+$('graphBaseEnd').value,17),'Zoom preserves figure anchors');
+$('graphSync').click();
+check(near(+$('graphBaseStart').value,.2)&&near(+$('graphBaseEnd').value,17),'Analysis range sync does not sync baseline');
+$('graphBaseEnd').value='30';$('graphBaseEnd').dispatchEvent(new Event('input'));
+check($('graphSave').disabled&&$('graphCopy').disabled&&$('graphStatus').textContent.includes('範囲外'),'Invalid figure anchors reject export');
+$('graphBaseStart').value='.1';$('graphBaseEnd').value='18';$('graphBaseEnd').dispatchEvent(new Event('input'));
+$('graphBaseline').checked=false;$('graphBaseline').dispatchEvent(new Event('input'));
+check(!window.__GPC_GRAPH_TEST__.frame.baselineCorrected&&$('graphBaseStart').disabled,'Original uncorrected figure available');
+$('graphBaseline').checked=true;$('graphBaseline').dispatchEvent(new Event('input'));
+check(JSON.stringify({data:state.datasets,result:result(),cal:state.cal,start:$('start').value,end:$('end').value,baseStart:$('baseStart').value,baseEnd:$('baseEnd').value})===analysisBeforeAxis,'Figure baseline never mutates analysis');
+$('graphStart').value='7.5';$('graphEnd').value='10.5';$('graphStart').dispatchEvent(new Event('input'));
+await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+check($('graphStatus').textContent.includes('コピーしました'),'Corrected figure saved and copied');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Figure baseline default/manual/drag, horizontal zero axis, independent intervals, raw toggle, invalid anchors and corrected export');
+const beforeFailedGraphImport=JSON.stringify({datasets:state.datasets,result:result()});
+await input('graphFileInput',[new File(['bad'],'broken.crm')]);
+check($('graphImportStatus').className==='error'&&JSON.stringify({datasets:state.datasets,result:result()})===beforeFailedGraphImport,'Figure import failure visible and preserves data');
+await input('graphFileInput',[new File(['0,0\n10,10\n20,0'],'figure-input.csv')]);
+check($('graphFiles').children.length===2&&state.datasets[state.selected].name==='figure-input.csv','Figure CSV input shares datasets');
+$('graphFiles').querySelector('.file-item').click();
+check(state.selected===0&&$('graphSource').textContent.length>0,'Select shared dataset from figure');
+$('graphOverlay').checked=false;$('graphOverlay').dispatchEvent(new Event('input'));
+$('graphStart').value='7.5';$('graphEnd').value='10.5';$('graphStart').dispatchEvent(new Event('input'));
+const beforeLabelDrag=JSON.stringify({data:state.datasets,result:result(),start:$('graphStart').value,end:$('graphEnd').value,bs:$('graphBaseStart').value,be:$('graphBaseEnd').value});
+const handle=$('graphLabelHandle'),hrect=handle.getBoundingClientRect(),captureLabel=handle.setPointerCapture;
+check(!handle.hidden&&hrect.width>0,'Label hit target visible');
+handle.setPointerCapture=()=>{};
+const labelFrame=window.__GPC_GRAPH_TEST__.frame,dx=40,dy=-15;
+check(labelFrame.label.y-labelFrame.axisY<180,'Label near zero axis with large font');
+handle.dispatchEvent(new PointerEvent('pointerdown',{pointerId:7,button:0,clientX:hrect.left+10,clientY:hrect.top+10}));
+handle.dispatchEvent(new PointerEvent('pointermove',{pointerId:7,clientX:hrect.left+10+dx,clientY:hrect.top+10+dy}));
+handle.dispatchEvent(new PointerEvent('pointerup',{pointerId:7}));handle.setPointerCapture=captureLabel;
+check(+$('graphLabelX').value>0&&+$('graphLabelY').value<0,'Label drag updates offsets');
+check(JSON.stringify({data:state.datasets,result:result(),start:$('graphStart').value,end:$('graphEnd').value,bs:$('graphBaseStart').value,be:$('graphBaseEnd').value})===beforeLabelDrag,'Label movement preserves data, analysis, zoom and baseline');
+const offsetBefore=+$('graphLabelX').value;
+handle.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',shiftKey:true,bubbles:true}));
+check(near(+$('graphLabelX').value,offsetBefore+10),'Keyboard label adjustment');
+$('graphLabelReset').click();check(+$('graphLabelX').value===0&&+$('graphLabelY').value===0,'Reset label position');
+$('graphLabelY').value='-10';$('graphLabelY').dispatchEvent(new Event('input'));
+await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+check($('graphStatus').textContent.includes('コピーしました'),'Moved label image export');
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Direct CRM/CSV figure import, error handling, dataset selection, compact draggable label, keyboard/reset and moved image export');
+// Main normalized workflow: real CSV, per-sample controls, export and deletion.
+await input('graphFileInput',[makeFile('41.csv')]);
+$('graphMode').value='normalize';$('graphMode').onchange();$('graphReset').click();
+check(+$('graphStart').value===0&&+$('graphEnd').value===20&&$('graphAutoY').checked,'Normalization reset uses full data range');
+$('graphStart').value='6';$('graphEnd').value='11';$('graphAutoY').checked=false;$('graphYMin').value='0';$('graphYMax').value='110';
+$('graphOverlay').checked=true;$('graphStyle').value='detail';$('graphLegend').checked=true;$('graphGrid').checked=false;
+$('graphTickSize').value='42';$('graphLabelSize').value='42';$('graphLabelReset').click();
+const beforeNormalizedUI=JSON.stringify({datasets:state.datasets,result:result(),cal:state.cal});
+const graphRows=()=>$('graphFiles').querySelectorAll('.graph-file');
+// Hide the earlier synthetic fixture, leaving the two real matching files.
+const syntheticRow=[...graphRows()].find(r=>r.querySelector('.file-item').textContent==='figure-input.csv');
+syntheticRow.querySelector('.graph-visible').checked=false;syntheticRow.querySelector('.graph-visible').onchange();
+$('graphNormalizeRange').click();$('graphAutoY').checked=false;
+const normPair=window.__GPC_GRAPH_TEST__.prepared.datasets;
+check(normPair.length===2&&normPair.every(d=>Math.abs(Math.max(...d.signal.filter((_,i)=>d.times[i]>=6&&d.times[i]<=11))-100)<1e-8),'Two files normalized individually');
+check(normPair[0].signal.every((v,i)=>Math.abs(v-normPair[1].signal[i])<1e-8),'Native CRM CSV curves identical');
+check(normPair.every(d=>Math.abs(window.GPCCore.interp(d.times,d.signal,10)-17.72070088088855)<1e-8),'Native 10min normalized reference');
+const csvRow=[...graphRows()].find(r=>r.querySelector('.file-item').textContent==='41.csv');
+csvRow.querySelector('.graph-color').value='#e04040';csvRow.querySelector('.graph-color').oninput();
+csvRow.querySelector('.graph-shift').value='15';csvRow.querySelector('.graph-shift').oninput();
+check(window.__GPC_GRAPH_TEST__.prepared.datasets.find(d=>d.name==='41.csv').yOffset===15,'Independent y offset');
+check(window.__GPC_GRAPH_TEST__.prepared.datasets.find(d=>d.name==='41.csv').color==='#e04040','Per-file color');
+$('graphYMax').value='130';$('graphYMax').dispatchEvent(new Event('input'));
+check(window.__GPC_GRAPH_TEST__.frame.ymax===130,'Editable y scale');
+$('graphStart').value='6.1';$('graphStart').dispatchEvent(new Event('input'));
+check(window.__GPC_GRAPH_TEST__.prepared.datasets.every(d=>d.normalization.start===6&&d.normalization.end===11),'Range edit preserves applied normalization');
+$('graphStart').value='6';$('graphStart').dispatchEvent(new Event('input'));$('graphNormalizeRange').click();
+$('graphNormChoice').value='endpoints';$('graphNormalizeRange').click();
+for(const d of window.__GPC_GRAPH_TEST__.prepared.datasets){
+ check(Math.abs(window.GPCCore.interp(d.times,d.signal,6))<1e-8&&Math.abs(window.GPCCore.interp(d.times,d.signal,11))<1e-8,'Endpoint correction gives zero at both ends');
+ check(near(Math.max(...d.signal.filter((_,i)=>d.times[i]>=6&&d.times[i]<=11)),100),'Endpoint normalized peak 100');
+}
+const fixed=JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets);
+$('graphStart').value='7';$('graphStart').dispatchEvent(new Event('input'));
+check(JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets)===fixed,'Endpoint normalization fixed during range edits');
+$('graphStart').value='6';$('graphNormChoice').value='start';$('graphNormalizeRange').click();
+check(JSON.stringify({datasets:state.datasets,result:result(),cal:state.cal})===beforeNormalizedUI,'Normalization/color/offset/ranges leave analysis and raw data unchanged');
+await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+await exportFile('graphCSV','GPC_figure.csv');
+$('graphLegend').checked=true;$('graphLegendSize').value='60';$('graphLegendX').value='-100';$('graphLegendY').value='80';$('graphLegendSize').dispatchEvent(new Event('input'));
+check(!$('graphLegendHandle').hidden&&window.__GPC_GRAPH_TEST__.frame.legend,'Image legend interactive');
+const lh=$('graphLegendHandle'),lr=lh.getBoundingClientRect(),captureLegend=lh.setPointerCapture;lh.setPointerCapture=()=>{};
+const oldLegendX=+$('graphLegendX').value;
+lh.dispatchEvent(new PointerEvent('pointerdown',{pointerId:77,button:0,clientX:lr.left+10,clientY:lr.top+10}));
+lh.dispatchEvent(new PointerEvent('pointermove',{pointerId:77,clientX:lr.left-20,clientY:lr.top+30}));
+lh.dispatchEvent(new PointerEvent('pointerup',{pointerId:77}));lh.setPointerCapture=captureLegend;
+check(+$('graphLegendX').value<oldLegendX,'Legend drag updates position');
+$('graphNormChoice').value='endpoints';$('graphNormalizeRange').click();
+const figureProject={...window.GPC_APP_BRIDGE.projectSnapshot(),workspace:window.GPCSession.workspace()};
+const figureBefore=JSON.stringify(window.__GPC_GRAPH_TEST__.prepared);
+await exportFile('graphProjectSave','GPC_project.json');
+$('graphLegendSize').value='20';$('graphLegendReset').click();$('graphNormChoice').value='start';$('graphNormalizeRange').click();
+await input('graphProjectInput',[new File([JSON.stringify(figureProject)],'figure-project.json')]);
+check(!$('graphPage').hidden&&$('graphLegendSize').value==='60'&&$('graphNormMethod').value==='endpoints','Figure project controls restored');
+check(JSON.stringify(window.__GPC_GRAPH_TEST__.prepared)===figureBefore,'Figure project restores exact overlay and baseline');
+await input('graphProjectInput',[new File(['{}'],'bad-project.json')]);
+check($('graphStatus').textContent.includes('エラー')&&JSON.stringify(window.__GPC_GRAPH_TEST__.prepared)===figureBefore,'Invalid figure project preserves state');
+check($('graphNormalizeRange').closest('.graph-preview'),'Normalization controls below preview');
+$('graphNormChoice').value='start';$('graphNormalizeRange').click();
+await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+const legendExportCount=window.__nativeExportCount||0;
+window.GPCNativeExport('legend-preview.png',await new Promise(resolve=>$('graphCanvas').toBlob(resolve,'image/png')));
+await wait(()=>(window.__nativeExportCount||0)>legendExportCount);
+pass('Image legend font/drag, figure project save/restore, normalization and overlay preservation');
+
+// Export remains blocked on a constant visible dataset, then recovers on deletion.
+await input('graphFileInput',[new File(['0,1\n6,1\n8,1\n11,1\n20,1'],'flat.csv')]);
+check($('graphSave').disabled&&$('graphStatus').textContent.includes('開始信号以下'),'Flat data visibly rejected');
+[...graphRows()].find(r=>r.querySelector('.file-item').textContent==='flat.csv').querySelector('.file-remove').click();
+check(!$('graphSave').disabled,'Removing invalid dataset recovers normalization');
+// Remove unselected sample from the shared list and verify remaining colors survive.
+[...graphRows()].find(r=>r.querySelector('.file-item').textContent==='figure-input.csv').querySelector('.file-remove').click();
+check(state.datasets.length===2&&graphRows().length===2,'Figure delete removes shared measurement');
+check(graphRows()[1].querySelector('.graph-color').value==='#e04040','Colors preserved after deletion');
+const backupProject={format:'GPCA-project-v1',datasets:structuredClone(state.datasets),selected:0,calibration:structuredClone(state.cal),options:{mode:'research',start:7.8,end:10.4,baselineType:'endpoints'}};
+while(graphRows().length)graphRows()[0].querySelector('.file-remove').click();
+check(state.datasets.length===0&&result()===null&&$('graphSave').disabled,'Last figure deletion clears analysis and exports');
+await input('jsonFile',[new File([JSON.stringify(backupProject)],'restored.json')]);
+check(!$('graphSave').disabled&&graphRows().length===2,'Reimport project restores graph after deletion');
+graphRows()[1].querySelector('.graph-color').value='#e04040';graphRows()[1].querySelector('.graph-color').oninput();
+graphRows()[1].querySelector('.graph-shift').value='15';graphRows()[1].querySelector('.graph-shift').oninput();
+check(window.__errors.length===0,window.__errors.join('\n'));
+pass('Normalized 41 CRM/CSV references, default fonts/ranges, independent colors/shifts/visibility, errors, deletion and unchanged analysis');
+document.querySelector('[data-choice="graphStyle"] [data-value="simple"]').click();
+$('graphLegend').checked=false;$('graphReset').click();
+check(window.__GPC_GRAPH_TEST__.frame.xmin===0&&window.__GPC_GRAPH_TEST__.frame.xmax===20,'Final full view');
+await exportFile('graphSave','41_graph.png');
+
+$('graphAspect').value='1';$('graphAspect').dispatchEvent(new Event('input'));
+check(Math.abs(window.__GPC_GRAPH_TEST__.frame.width/window.__GPC_GRAPH_TEST__.frame.height-1)<.001,'Square plot area');
+$('graphGuideToggle').click();check($('graphGuides').checked&&$('graphGuideToggle').getAttribute('aria-pressed')==='true','Guide toggle');
+$('graphGuideInterval').value='0';$('graphGuideInterval').dispatchEvent(new Event('input'));
+check($('graphSave').disabled&&$('graphStatus').textContent.includes('補助線'),'Invalid guide interval blocks export');
+$('graphGuideInterval').value='0.5';$('graphGuideInterval').dispatchEvent(new Event('input'));
+check(!$('graphSave').disabled,'Fractional guides recover export');
+await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+$('graphGuideToggle').click();$('graphAspect').value='';$('graphAspect').dispatchEvent(new Event('input'));
+await exportFile('graphSave','41_graph.png');
+$('graphMode').value='normalize';$('graphMode').onchange();$('graphReset').click();const fixedCurve=JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets.map(d=>d.signal));box('graphCanvas');check(!$('graphAutoY').checked&&JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets.map(d=>d.signal))===fixedCurve,'Normalized rectangle preserves initial curve exactly');$('graphReset').click();
+pass('Aspect ratio, guide controls, image copy/save and invalid interval in WKWebView');
+$('graphStart').value='6';$('graphEnd').value='11';$('graphNormalizeRange').click();
+check(window.__GPC_GRAPH_TEST__.prepared.datasets.every(d=>near(Math.max(...d.signal.filter((_,i)=>d.times[i]>=6&&d.times[i]<=11)),100)),'Explicit reference range independently normalizes each sample');
+const matched=JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets.map(d=>d.normalization));box('graphCanvas');
+check(JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets.map(d=>d.normalization))===matched,'Zoom preserves independent normalization references');
+$('graphHorizontalToggle').click();check($('graphGrid').checked&&!$('graphGuides').checked&&!$('graphSave').disabled,'Horizontal dotted grid independent in simple style');
+$('graphHorizontalInterval').value='0';$('graphHorizontalInterval').dispatchEvent(new Event('input'));check($('graphSave').disabled,'Invalid horizontal grid interval');
+$('graphHorizontalInterval').value='20';$('graphHorizontalInterval').dispatchEvent(new Event('input'));check(!$('graphSave').disabled,'Horizontal grid recovery');
+$('graphHorizontalToggle').click();$('graphReset').click();
+pass('Independent sample normalization action, frozen zoom, horizontal/vertical grid separation');
+const allSnapshot=window.GPC_APP_BRIDGE.projectSnapshot(),calBeforeAll=JSON.stringify(state.cal);
+for(const id of ['graphRemoveAll','removeAllFiles']){
+ $(id).click();check(state.datasets.length===0&&state.selected===-1&&result()===null,'Clear all shared measurements');
+ check($('graphFiles').children.length===0&&$('files').children.length===0&&$('graphSave').disabled&&$('graphRemoveAll').disabled&&$('removeAllFiles').disabled,'Both lists and output cleared');
+ check(JSON.stringify(state.cal)===calBeforeAll,'Clear all preserves calibration');
+ window.GPC_APP_BRIDGE.restoreProject(structuredClone(allSnapshot));
+ check(state.datasets.length>0&&!$(id).disabled,'Data can be reloaded after clearing');
+}
+pass('Clear all from both lists preserves calibration, clears stale results and permits reload');
+const tabnav=document.querySelector('.nav-main'),tabCapture=tabnav.setPointerCapture;tabnav.setPointerCapture=()=>{};
+const originalTabOrder=window.GPCPageOrder.snapshot(),selectedPage=window.GPCSession.workspace().page;
+const moveTab=async(button,longPress,cancel=false)=>{
+ const r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{pointerId:21,button:longPress?0:2,clientX:r.left+r.width/2,clientY:r.top+10,bubbles:true}));
+ if(longPress)await new Promise(resolve=>setTimeout(resolve,500));
+ tabnav.dispatchEvent(new PointerEvent('pointermove',{pointerId:21,clientX:tabnav.getBoundingClientRect().left-10,clientY:r.top+10,bubbles:true}));
+ if(cancel)window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
+ tabnav.dispatchEvent(new PointerEvent('pointerup',{pointerId:21,bubbles:true}));button.click();
+};
+await moveTab($('navCalibration'),false);check(window.GPCPageOrder.snapshot()[0]==='navCalibration','Right drag reorders tabs');
+check(window.GPCSession.workspace().page===selectedPage,'Reordering does not switch page');
+await moveTab($('navAnalysis'),true);check(window.GPCPageOrder.snapshot()[0]==='navAnalysis','Long press reorders tabs');
+const beforeCancel=window.GPCPageOrder.snapshot().join();await moveTab($('navGraph'),false,true);check(window.GPCPageOrder.snapshot().join()===beforeCancel,'Escape restores tab order');
+window.GPCPageOrder.restore(originalTabOrder);tabnav.setPointerCapture=tabCapture;
+pass('Page order: initial leftmost, right drag, long press, cancellation and no accidental page switch');
+
+{
+ const snapshot=window.GPCSession.snapshot();
+ $('navCalibration').click();$('calCalculate').click();
+ const computed=window.GPCCalibrationEditor.current(),appliedBefore=JSON.stringify(window.GPC_APP_BRIDGE.getCalibration());
+ $('calEditorLibraryName').value='作成画面から保存';$('calEditorLibrarySave').click();
+ const savedEntry=window.GPCCalibrationLibrary.snapshot().find(e=>e.name==='作成画面から保存');
+ check(savedEntry&&JSON.stringify(savedEntry.calibration.coefficients)===JSON.stringify(computed.coefficients),'Editor footer saves calculated curve to shared collection');
+ check(JSON.stringify(window.GPC_APP_BRIDGE.getCalibration())===appliedBefore,'Editor save does not apply draft calibration');
+ $('calDegree').value='2';$('calDegree').onchange();$('calEditorLibrarySave').click();
+ check($('calEditorLibraryStatus').className==='error','Editor dirty draft cannot save stale curve');
+ window.GPCSession.restore(snapshot);$('navGraph').click();$('graphPeakClear').click();$('graphReset').click();
+ const f=cssFrame('graphCanvas'),c=$('graphCanvas'),oldCapture=c.setPointerCapture;
+ const beforeView=[$('graphStart').value,$('graphEnd').value],beforeSignal=JSON.stringify(state.datasets);
+ const originalNorm=[$('graphNormStart').value,$('graphNormEnd').value];
+ $('graphDragPeak').click();c.setPointerCapture=()=>{};
+ const x=t=>f.left+(t-f.xmin)/(f.xmax-f.xmin)*f.width,y=f.top+f.height*.5;
+ pointer(c,'pointerdown',x(11),y);pointer(c,'pointermove',x(6),y);pointer(c,'pointerup',x(6),y);c.setPointerCapture=oldCapture;
+ check(near(+$('graphPeakStart').value,6)&&near(+$('graphPeakEnd').value,11),'Peak reference range reverse drag');
+ check(JSON.stringify(beforeView)===JSON.stringify([$('graphStart').value,$('graphEnd').value]),'Peak selection preserves viewport');
+ check(JSON.stringify(originalNorm)===JSON.stringify([$('graphNormStart').value,$('graphNormEnd').value]),'Peak selection preserves baseline interval');
+ for(const d of window.__GPC_GRAPH_TEST__.prepared.datasets)check(near(Math.max(...d.signal.filter((_,i)=>d.times[i]>=6&&d.times[i]<=11)),100),'Chosen peak 100 per sample');
+ check(JSON.stringify(state.datasets)===beforeSignal,'Peak selection preserves raw signals');
+ const project={...window.GPC_APP_BRIDGE.projectSnapshot(),workspace:window.GPCSession.workspace()};
+ $('graphPeakClear').click();await input('graphProjectInput',[new File([JSON.stringify(project)],'peak-project.json')]);
+ check($('graphPeakStart').value==='6.000000'&&$('graphPeakEnd').value==='11.000000','Project open restores peak reference');
+ $('graphDragZoom').click();$('graphPeakClear').click();
+ for(const id of ['graphAxisWidth','graphCurveWidth','graphTickSize','graphLabelSize','graphFont','graphLabelX']){
+  check($(id).closest('.graph-settings'),'Style controls in left sidebar: '+id);
+ }
+ pass('Calibration footer shared save, stale-draft rejection, chosen peak drag/viewport isolation, project open and appearance controls below graph');
+}
+$('helpOpen').click();check(!$('helpPanel').hidden&&$('helpPanel').textContent.includes('非物理的'),'Offline help and scientific limits');$('helpClose').click();
+pass('Full initial/reset range, visible mode/style choices, image actions below graph, horizontal-only default and hidden legend');
+
+{
+ const lib=window.GPCCalibrationLibrary,base=window.GPC_APP_BRIDGE.getCalibration();
+ const baselineData=JSON.stringify(state.datasets),a=structuredClone(base),b=structuredClone(base);
+ a.name='ライブラリA';b.name='ライブラリB';b.coefficients[0]+=.1;
+ const aid=lib.remember(a),bid=lib.remember(b);
+ $('calLibrarySelect').value=aid;$('calLibrarySelect').onchange();
+ const ma=result().mn;
+ $('calLibrarySelect').value=bid;$('calLibrarySelect').onchange();
+ check(near(result().mn/ma,10**.1),'Library switch applies exact saved coefficients');
+ check(JSON.stringify(state.datasets)===baselineData,'Library switch preserves measurement arrays');
+ const snap=window.GPCSession.snapshot();check(snap.workspace.calibrationLibrary.length>=2,'Project captures calibration collection');
+ const bogus=structuredClone(snap.workspace);bogus.calibrationLibrary[0].calibration.coefficients[0]=null;
+ let rejected=false;try{window.GPCSession.restoreWorkspace(bogus);}catch{rejected=true;}check(rejected,'Malformed library rejected before restore');
+ $('calLibrarySelect').value=aid;$('calLibraryDelete').click();
+ check(!lib.snapshot().some(e=>e.id===aid)&&window.GPC_APP_BRIDGE.getCalibration().name==='ライブラリB','Library deletion preserves applied calibration');
+ lib.restore(snap.workspace.calibrationLibrary);const count=lib.snapshot().length;lib.restore(snap.workspace.calibrationLibrary);check(lib.snapshot().length===count,'Project merge is idempotent');
+ $('graphTickInterval').value='2';$('graphTickInterval').dispatchEvent(new Event('input'));
+ check(!$('graphSave').disabled,'Manual tick interval draws in WebKit');
+ const beforeTick=result().mn;$('analysisTickInterval').value='2';$('analysisTickInterval').dispatchEvent(new Event('input'));
+ check(result().mn===beforeTick,'Axis settings preserve analysis');
+ $('graphTickInterval').value='0';$('graphTickInterval').dispatchEvent(new Event('input'));check($('graphSave').disabled,'Invalid interval blocks figure export');
+ $('graphTickInterval').value='';$('graphTickInterval').dispatchEvent(new Event('input'));$('analysisTickInterval').value='';window.GPC_APP_BRIDGE.applyCalibration(base);
+ pass('Calibration collection switch, exact coefficients, non-destructive deletion, project merge/validation and manual axis interval');
+}
+
+{
+ $('navGraph').click();$('graphGuides').checked=true;$('graphGrid').checked=true;
+ $('graphGuideWidth').value='6';$('graphGuideOpacity').value='100';$('graphGuideWidth').dispatchEvent(new Event('input'));
+ const strong=$('graphCanvas').toDataURL(),raw=JSON.stringify(state.datasets),mn=result().mn;
+ $('graphGuideOpacity').value='0';$('graphGuideOpacity').dispatchEvent(new Event('input'));
+ check($('graphCanvas').toDataURL()!==strong,'Guide darkness updates actual pixels');
+ check(result().mn===mn&&JSON.stringify(state.datasets)===raw,'Guide settings preserve data and calculation');
+ $('graphGuideOpacity').value='70';$('graphGuideOpacity').dispatchEvent(new Event('input'));
+ const snapshot=window.GPCSession.snapshot();$('graphGuideWidth').value='2';window.GPCSession.restore(snapshot);
+ check($('graphGuideWidth').value==='6'&&$('graphGuideOpacity').value==='70','Guide settings restored from project');
+ const sidebar=document.querySelector('.graph-settings');
+ await new Promise(requestAnimationFrame);
+ const originalY=$('graphCanvas').getBoundingClientRect().top,pageY=window.scrollY;
+ sidebar.scrollTop=60;await new Promise(requestAnimationFrame);
+ check(sidebar.scrollTop>0&&window.scrollY===pageY&&Math.abs($('graphCanvas').getBoundingClientRect().top-originalY)<1,'Sidebar scroll leaves graph and page fixed '+JSON.stringify({scroll:sidebar.scrollTop,scrollHeight:sidebar.scrollHeight,clientHeight:sidebar.clientHeight,overflow:getComputedStyle(sidebar).overflowY,max:getComputedStyle(sidebar).maxHeight,view:innerWidth,pageBefore:pageY,pageAfter:window.scrollY,graphBefore:originalY,graphAfter:$('graphCanvas').getBoundingClientRect().top}));
+ sidebar.scrollTop=0;
+ check($('jsonImport').classList.contains('secondary')&&$('graphProjectOpen').classList.contains('secondary'),'Consistent project open button style');
+ const c=document.createElement('canvas');c.width=100;c.height=240;const context=c.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,100,240);context.fillStyle='#000';context.fillRect(10,40,30,10);
+ let cropped=window.GPCFigure.trimBottom(c);check(cropped.height===74&&cropped.width===100,'Blank output margin reduced to 24px');
+ context.fillStyle='#123456';context.fillRect(15,180,25,10);
+ cropped=window.GPCFigure.trimBottom(c);check(cropped.height===214,'Lower curve or legend retained while cropping');
+ const before=context.getImageData(0,0,100,cropped.height).data,after=cropped.getContext('2d').getImageData(0,0,100,cropped.height).data;
+ check(before.every((v,i)=>v===after[i]),'Export crop preserves every retained pixel');
+ check(c.height===240,'Preview and plot aspect remain unchanged');
+ await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+ pass('Guide width/darkness pixels, project restore, independent sidebar scroll, project button style and lossless bottom-margin cropping');
+}
+
+{
+ const original=window.GPCSession.snapshot();$('navGraph').click();
+ check($('graphTitleSettings').closest('.graph-settings')&&$('graphLegendSize').closest('.graph-settings'),'Title and subsequent settings in left sidebar');
+ check(!$('graphSideProjectSave')&&!$('graphSideProjectOpen')&&$('graphProjectSave').closest('.graph-preview')&&$('graphProjectOpen').closest('.graph-preview'),'Project actions only below overview graph');
+ let opened=0;const oldClick=$('graphProjectInput').click;$('graphProjectInput').click=()=>opened++;$('graphProjectOpen').click();$('graphProjectInput').click=oldClick;check(opened===1,'Graph action opens project chooser');
+ $('baseMode').value='range';$('baseStart').value='.1';$('baseEnd').value='18';window.GPC_APP_BRIDGE.refresh();
+ await exportFile('graphProjectSave','GPC_project.json');
+ $('graphMode').value='normalize';$('graphMode').onchange();$('graphAutoNormalize').checked=true;$('graphReset').click();
+ $('graphStart').value='6';$('graphEnd').value='11';$('graphStart').dispatchEvent(new Event('input'));$('graphDragZoom').click();
+ const c=$('graphCanvas'),f=cssFrame('graphCanvas'),capture=c.setPointerCapture;c.setPointerCapture=()=>{};
+ pointer(c,'pointerdown',f.left+f.width*.25,f.top+f.height*.25);pointer(c,'pointermove',f.left+f.width*.75,f.top+f.height*.75);pointer(c,'pointerup',f.left+f.width*.75,f.top+f.height*.75);
+ check($('graphAutoY').checked,'Automatic normalization resets Y view');
+ for(const d of window.__GPC_GRAPH_TEST__.prepared.datasets){check(near(d.normalization.start,+$('graphStart').value)&&near(d.normalization.end,+$('graphEnd').value),'Zoom uses current normalization bounds');check(near(Math.max(...d.signal.filter((_,i)=>d.times[i]>=+$('graphStart').value&&d.times[i]<=+$('graphEnd').value)),100),'Zoom peak reaches 100');}
+ const autoSignals=JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets);
+ $('graphAutoNormalize').checked=false;box('graphCanvas');check(JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets)===autoSignals,'OFF freezes normalized values during zoom');
+ $('graphAutoNormalize').checked=true;const pf=cssFrame('graphCanvas'),r=c.getBoundingClientRect();
+ const send=(type,dx)=>c.dispatchEvent(new PointerEvent(type,{pointerId:33,button:2,buttons:type==='pointerup'?0:2,clientX:r.left+pf.left+pf.width*(.5+dx),clientY:r.top+pf.top+pf.height*.5,bubbles:true}));
+ send('pointerdown',0);send('pointermove',.05);send('pointerup',.05);check(JSON.stringify(window.__GPC_GRAPH_TEST__.prepared.datasets)===autoSignals,'Pan preserves normalization with automatic zoom ON');c.setPointerCapture=capture;
+ $('graphAutoNormalize').checked=false;$('graphReset').click();
+ const dataBefore=JSON.stringify(state.datasets),selectedBefore=state.datasets[state.selected].name;
+ const first=$('graphFiles').firstElementChild.querySelector('.file-item').textContent;
+ $('graphFiles').firstElementChild.querySelector('.file-move-down').click();
+ check($('graphFiles').children[1].querySelector('.file-item').textContent===first,'Move down reorders list');
+ check(window.__GPC_GRAPH_TEST__.prepared.datasets[1].name===first,'Plot and legend order match list');
+ check(JSON.stringify(state.datasets)===dataBefore&&state.datasets[state.selected].name===selectedBefore,'Reorder preserves original arrays and selected data');
+ const rows=[...$('graphFiles').children],transfer=new DataTransfer();rows[1].querySelector('.reorder-handle').ondragstart({dataTransfer:transfer});rows[0].ondrop({preventDefault(){}});
+ check($('graphFiles').firstElementChild.querySelector('.file-item').textContent===first,'Drag drop reorders list');
+ $('graphTitleAutoFit').checked=false;$('graphTitle').value='GPC(CHCl3)';$('graphTitleSize').value='60';$('graphTitleFont').value='Times';$('graphTitleWidth').value='1000';$('graphTitleHeight').value='180';$('graphTitleBorder').checked=true;$('graphTitle').dispatchEvent(new Event('input'));
+ check(!$('graphTitleHandle').hidden&&window.__GPC_GRAPH_TEST__.frame.title,'Title visible in horizontal-only style');
+ const handle=$('graphTitleHandle'),hr=handle.getBoundingClientRect(),cap=handle.setPointerCapture;handle.setPointerCapture=()=>{};
+ handle.dispatchEvent(new PointerEvent('pointerdown',{pointerId:41,button:0,clientX:hr.left+10,clientY:hr.top+10}));handle.dispatchEvent(new PointerEvent('pointermove',{pointerId:41,clientX:hr.left+40,clientY:hr.top+40}));handle.dispatchEvent(new PointerEvent('pointerup',{pointerId:41}));handle.setPointerCapture=cap;
+ check(+$('graphTitleX').value>0&&+$('graphTitleY').value>0,'Title drag moves box');
+ const resize=$('graphTitleResize'),rr=resize.getBoundingClientRect(),rcap=resize.setPointerCapture;resize.setPointerCapture=()=>{};
+ resize.dispatchEvent(new PointerEvent('pointerdown',{pointerId:42,button:0,clientX:rr.left,clientY:rr.top}));resize.dispatchEvent(new PointerEvent('pointermove',{pointerId:42,clientX:rr.left+30,clientY:rr.top+20}));resize.dispatchEvent(new PointerEvent('pointerup',{pointerId:42}));resize.setPointerCapture=rcap;
+ check(+$('graphTitleWidth').value>1000&&+$('graphTitleHeight').value>180,'Title box can be resized by dragging');
+ const saved={...window.GPC_APP_BRIDGE.projectSnapshot(),workspace:window.GPCSession.workspace()},order=$('graphFiles').textContent;
+ $('graphTitle').value='';$('graphTitle').dispatchEvent(new Event('input'));await input('graphProjectInput',[new File([JSON.stringify(saved)],'title-project.json')]);
+ check($('graphTitle').value==='GPC(CHCl3)'&&$('graphTitleFont').value==='Times'&&$('graphFiles').textContent===order,'Project restores title and legend order');
+ await exportFile('graphSave','41_graph.png');await $('graphCopy').onclick();
+ const count=window.__nativeExportCount||0;window.GPCNativeExport('title-preview.png',await new Promise(resolve=>window.GPCFigure.trimBottom(c).toBlob(resolve,'image/png')));await wait(()=>(window.__nativeExportCount||0)>count);
+ window.GPCSession.restore(original);
+ pass('Overview project actions, automatic normalization ON/OFF and pan isolation, reorder and title edit/drag/resize/project/export');
+}
+
+{
+ const original=window.GPCSession.snapshot();$('navGraph').click();$('graphTitle').value='CHCl3';$('graphTitleFit').click();
+ check(+$('graphTitleWidth').value<400&&+$('graphTitleHeight').value<100,'Title auto fit is compact');
+ const resize=$('graphTitleResize'),rect=resize.getBoundingClientRect(),capture=resize.setPointerCapture;resize.setPointerCapture=()=>{};resize.dispatchEvent(new PointerEvent('pointerdown',{pointerId:61,button:0,clientX:rect.left,clientY:rect.top}));resize.dispatchEvent(new PointerEvent('pointermove',{pointerId:61,clientX:rect.left+30,clientY:rect.top+30}));window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));resize.setPointerCapture=capture;check($('graphTitleAutoFit').checked,'Resize cancellation restores auto fit');
+ const field=$('graphTitle');field.focus();field.setSelectionRange(4,5);document.querySelector('#graphTitleSettings [data-title-script="sub"]').click();
+ check(JSON.parse($('graphTitleFormat').value).some(r=>r.text==='3'&&r.script==='sub'),'Sidebar selected digit becomes subscript');
+ const before=[$('graphTitleX').value,$('graphTitleY').value];$('graphTitleHandle').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));
+ const editor=$('graphTitleInlineEditor');check(!editor.hidden&&document.activeElement===editor,'Double click starts inline title editing');
+ check(JSON.stringify(before)===JSON.stringify([$('graphTitleX').value,$('graphTitleY').value]),'Double click does not reset title position');
+ editor.value='CHCl3+';editor.dispatchEvent(new Event('input',{bubbles:true}));editor.setSelectionRange(5,6);document.querySelector('#graphTitleInlineTools [data-title-script="super"]').click();
+ check($('graphTitleInlinePreview').querySelector('sub')?.textContent==='3'&&$('graphTitleInlinePreview').querySelector('sup')?.textContent==='+','Inline format preview shows sub/sup');
+ $('graphTitleEditDone').click();check(editor.hidden&&$('graphTitle').value==='CHCl3+','Inline title committed');
+ const formats=$('graphTitleFormat').value;
+ $('graphTitleHandle').dispatchEvent(new MouseEvent('dblclick'));editor.value='cancelled';editor.dispatchEvent(new Event('input',{bubbles:true}));editor.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+ check($('graphTitle').value==='CHCl3+'&&$('graphTitleFormat').value===formats,'Escape restores text and formatting');
+ const project={...window.GPC_APP_BRIDGE.projectSnapshot(),workspace:window.GPCSession.workspace()};
+ $('graphTitle').value='plain';$('graphTitle').dispatchEvent(new Event('input'));await input('graphProjectInput',[new File([JSON.stringify(project)],'rich-title.json')]);
+ check($('graphTitleFormat').value===formats,'Project restores rich title');
+ const cv=$('graphCanvas'),count=window.__nativeExportCount||0;window.GPCNativeExport('rich-title.png',await new Promise(resolve=>window.GPCFigure.trimBottom(cv).toBlob(resolve,'image/png')));await wait(()=>(window.__nativeExportCount||0)>count);
+ await $('graphCopy').onclick();window.GPCSession.restore(original);
+ pass('Sub/sup selected formatting, inline double-click edit/preview/commit/cancel, compact auto fit and project/export round trip');
+}
+return log.join('\n');
+

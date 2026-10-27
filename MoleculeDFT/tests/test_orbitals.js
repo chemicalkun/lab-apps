@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');
+const {mesh,cube}=require('../web/orbital-view.js');
+const grid={label:'test',shape:[3,3,3],origin_bohr:[0,0,0],axes_bohr:[[1,0,0],[0,1,0],[0,0,1]],values:[]};
+for(let x=0;x<3;x++)for(let y=0;y<3;y++)for(let z=0;z<3;z++)grid.values.push(x-1);
+const triangles=mesh(grid,.5);
+assert(triangles.length>0);assert.deepEqual(new Set(triangles.map(t=>t.sign)),new Set([1,-1]));
+for(const t of triangles)for(const p of t.p)assert(Math.abs(p[0]-(t.sign>0?1.5:.5)*.529177210903)<1e-10);
+const text=cube(grid,[{element:'C',x:0,y:0,z:0}]);
+assert(text.includes('6 0.0'));assert.equal(text.trim().split('\n').slice(7).join(' ').trim().split(/\s+/).length,27);
+assert.throws(()=>mesh({...grid,values:[0]},.5));
+console.log('PASS signed isosurfaces interpolate both phases at correct bohr/angstrom positions; Cube includes all grid points.');

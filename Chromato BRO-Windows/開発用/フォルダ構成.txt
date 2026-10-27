@@ -1,0 +1,20 @@
+Chromato BRO フォルダ構成
+
+この「開発用」フォルダには、ソースコード・ビルドスクリプト・テスト・開発資料を保管しています。
+通常の使用や他の人への配布には不要です。削除せず保管してください。
+
+一つ上のフォルダ：完成アプリ（Mac）または実行用フォルダ（Windows）、配布ZIP、インストール手順.txt。
+MacとWindowsは別フォルダのまま管理します。
+
+再ビルド：
+Mac：このフォルダで bash build-macos.command を実行します。
+Windows：このフォルダで PowerShellから .\build-windows.ps1 を実行します。
+Macの完成.app・配布ZIP、Windowsの完成実行フォルダ・配布ZIPは一つ上へ出力されます。
+テストや一時ファイルは、このフォルダ内のbuildへ出力されます。
+
+Mac側の配布操作：
+python3 scripts/prepare-github-release.py --repo chemicalkun/chromato-bro-releases
+python3 scripts/publish-github-release.py --publish
+公開済みのビルドを上書き公開しない仕組みのため、通常の更新時は新しいビルド番号を使用してください。
+
+Mac側の.release-keysは秘密鍵です。共有・公開しないでください。

@@ -1,0 +1,11 @@
+build/
+src/bin/
+src/obj/
+.tools/
+.DS_Store
+
+開発用/build/
+開発用/src/bin/
+開発用/src/obj/
+開発用/installer/bin/
+開発用/installer/obj/
