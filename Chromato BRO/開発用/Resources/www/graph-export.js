@@ -107,7 +107,7 @@
     }
   }
   function clearNormalization(){$('graphNormStart').value='';$('graphNormEnd').value='';}
-  function render(){
+  function render({expandTitle=false}={}){
     ready=false;frame=null;prepared=null;buttons();status('');canvas.hidden=true;$('graphEmpty').hidden=false;
     $('graphGuideToggle').setAttribute('aria-pressed',String($('graphGuides').checked));$('graphGuideToggle').textContent='縦目盛線：'+($('graphGuides').checked?'ON':'OFF');
     $('graphHorizontalToggle').setAttribute('aria-pressed',String($('graphGrid').checked));$('graphHorizontalToggle').textContent='横目盛線：'+($('graphGrid').checked?'ON':'OFF');
@@ -128,8 +128,8 @@
     $('graphSource').textContent=overlay?`読み込み済み ${source.datasets.length} ファイル`:`選択中：${source.datasets[source.selected]?.name||'—'}`;
     try{
       const formattedTitle=titleRuns();
-      if($('graphTitleAutoFit').checked&&$('graphTitle').value.trim()){
-        const size=window.GPCFigure.titleSize(canvas,$('graphTitle').value,formattedTitle,$('graphTitleSize').valueAsNumber,$('graphTitleFont').value);$('graphTitleWidth').value=size.width;$('graphTitleHeight').value=size.height;
+      if(($('graphTitleAutoFit').checked||expandTitle)&&$('graphTitle').value.trim()){
+        const size=window.GPCFigure.titleSize(canvas,$('graphTitle').value,formattedTitle,$('graphTitleSize').valueAsNumber,$('graphTitleFont').value);$('graphTitleWidth').value=$('graphTitleAutoFit').checked?size.width:Math.max($('graphTitleWidth').valueAsNumber,size.width);$('graphTitleHeight').value=Math.min(1000,$('graphTitleAutoFit').checked?size.height:Math.max($('graphTitleHeight').valueAsNumber,size.height));
       }
       const bounds=$('graphAutoY').checked?null:[$('graphYMin').valueAsNumber,$('graphYMax').valueAsNumber];
       const normalizationRange=$('graphNormStart').value!==''&&$('graphNormEnd').value!==''?[Number($('graphNormStart').value),Number($('graphNormEnd').value)]:[Math.min(...source.datasets.map(d=>d.times[0])),Math.max(...source.datasets.map(d=>d.times.at(-1)))];
@@ -139,6 +139,7 @@
       prepared=window.GPCFigureData.prepare({...source,normalizationPeakRange,normalizationRange,normalizationMethod:$('graphNormMethod').value,start:$('graphStart').valueAsNumber,end:$('graphEnd').valueAsNumber,overlay,yRange:bounds},mode,styles);
       frame=window.GPCFigure.draw(canvas,prepared,
         {plotAspect:$('graphAspect').value,guideWidth:$('graphGuideWidth').valueAsNumber,guideOpacity:$('graphGuideOpacity').valueAsNumber,guides:$('graphGuides').checked,guideInterval:$('graphGuideInterval').valueAsNumber,zeroAxis:normalized,useColors:true,ylabel:normalized?'規格化信号強度（%）':'検出強度',labelOffsetX:$('graphLabelX').valueAsNumber,labelOffsetY:$('graphLabelY').valueAsNumber,baselineCorrect:baseline&&$('graphBaseline').checked,baselineStart:$('graphBaseStart').valueAsNumber,baselineEnd:$('graphBaseEnd').valueAsNumber,axisWidth:$('graphAxisWidth').valueAsNumber,curveWidth:$('graphCurveWidth').valueAsNumber,xTickInterval:$('graphTickInterval').value,tickFontSize:$('graphTickSize').valueAsNumber,labelFontSize:$('graphLabelSize').valueAsNumber,fontFamily:$('graphFont').value,simple,axes:$('graphAxes').checked,horizontalGuides:$('graphGrid').checked,horizontalInterval:$('graphHorizontalInterval').valueAsNumber,legendFontSize:$('graphLegendSize').valueAsNumber,legendOffsetX:$('graphLegendX').valueAsNumber,legendOffsetY:$('graphLegendY').valueAsNumber,legend:$('graphLegend').checked,titleRuns:formattedTitle,titleFontSize:$('graphTitleSize').valueAsNumber,titleFontFamily:$('graphTitleFont').value,titleWidth:$('graphTitleWidth').valueAsNumber,titleHeight:$('graphTitleHeight').valueAsNumber,titleOffsetX:$('graphTitleX').valueAsNumber,titleOffsetY:$('graphTitleY').valueAsNumber,titleBorder:$('graphTitleBorder').checked,title:$('graphTitle').value});
+      if(frame.title){$('graphTitleWidth').value=frame.title.width;$('graphTitleHeight').value=frame.title.height;}
       $('graphImageSize').textContent=`PNG · 横${canvas.width} px`;
       canvas.hidden=false;$('graphEmpty').hidden=true;ready=true;
       if((normalized||frame.baselineCorrected)&&!frame.axisVisible)status('現在の拡大範囲に横軸（0）がありません。縦軸の範囲を調整してください。');
@@ -187,7 +188,7 @@
     finally{busy=false;buttons();}
   }
 
-  for(const id of ['graphTitleAutoFit','graphTitleSize','graphTitleFont','graphTitleWidth','graphTitleHeight','graphTitleX','graphTitleY','graphTitleBorder','graphAutoNormalize','graphGuideWidth','graphGuideOpacity','graphPeakStart','graphPeakEnd','graphTickInterval','graphLegendSize','graphLegendX','graphLegendY','graphTitle','graphStart','graphEnd','graphOverlay','graphAxes','graphGrid','graphLegend','graphStyle','graphAxisWidth','graphCurveWidth','graphTickSize','graphLabelSize','graphFont','graphBaseline','graphBaseStart','graphBaseEnd','graphLabelX','graphLabelY','graphAutoY','graphYMin','graphYMax','graphGuides','graphGuideInterval','graphHorizontalInterval','graphAspect'])$(id).addEventListener('input',()=>{if(id==='graphTitleWidth'||id==='graphTitleHeight')$('graphTitleAutoFit').checked=false;if(id==='graphStart'||id==='graphEnd')autoNormalize();render();});
+  for(const id of ['graphTitleAutoFit','graphTitleSize','graphTitleFont','graphTitleWidth','graphTitleHeight','graphTitleX','graphTitleY','graphTitleBorder','graphAutoNormalize','graphGuideWidth','graphGuideOpacity','graphPeakStart','graphPeakEnd','graphTickInterval','graphLegendSize','graphLegendX','graphLegendY','graphTitle','graphStart','graphEnd','graphOverlay','graphAxes','graphGrid','graphLegend','graphStyle','graphAxisWidth','graphCurveWidth','graphTickSize','graphLabelSize','graphFont','graphBaseline','graphBaseStart','graphBaseEnd','graphLabelX','graphLabelY','graphAutoY','graphYMin','graphYMax','graphGuides','graphGuideInterval','graphHorizontalInterval','graphAspect'])$(id).addEventListener('input',()=>{if(id==='graphTitleWidth'||id==='graphTitleHeight')$('graphTitleAutoFit').checked=false;if(id==='graphStart'||id==='graphEnd')autoNormalize();render({expandTitle:id==='graphTitleSize'||id==='graphTitleFont'});});
   $('graphHorizontalToggle').onclick=()=>{$('graphGrid').checked=!$('graphGrid').checked;$('graphGrid').dispatchEvent(new Event('input',{bubbles:true}));};
   $('graphNormalizeRange').onclick=()=>{$('graphNormMethod').value=$('graphNormChoice').value;$('graphNormStart').value=$('graphStart').value;$('graphNormEnd').value=$('graphEnd').value;$('graphMode').value='normalize';$('graphAutoY').checked=true;fileList();render();};
   $('graphGuideToggle').onclick=()=>{$('graphGuides').checked=!$('graphGuides').checked;$('graphGuides').dispatchEvent(new Event('input',{bubbles:true}));};

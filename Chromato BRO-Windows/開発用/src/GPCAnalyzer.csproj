@@ -4,7 +4,7 @@
     <UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
     <AssemblyName>Chromato BRO</AssemblyName><RootNamespace>GPCAnalyzer</RootNamespace>
-    <DebugType>none</DebugType><Version>26.10.27</Version><FileVersion>26.10.27.45</FileVersion><Product>Chromato BRO</Product>
+    <DebugType>none</DebugType><Version>26.10.29</Version><FileVersion>26.10.29.46</FileVersion><Product>Chromato BRO</Product>
     <ApplicationIcon>AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup><Content Include="update-public.der"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content></ItemGroup>

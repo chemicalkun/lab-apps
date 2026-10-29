@@ -134,7 +134,12 @@ console.log('PASS: horizontal dotted guides in both styles and invalid interval 
  const moved=draw(source,{title:'GPC(CHCl3)',titleOffsetX:80,titleOffsetY:100,titleWidth:1000,titleHeight:180});
  assert.equal(moved.title.left,f.title.left+80);assert.equal(moved.title.top,f.title.top+100);
  assert.equal(draw(source,{title:''}).title,null);
- assert.throws(()=>draw(source,{title:'GPC(CHCl3)',titleHeight:40,titleFontSize:100}),/収まり/);
+ const grown=draw(source,{title:'GPC(CHCl3)',titleHeight:40,titleFontSize:100});
+ assert.ok(grown.title.height>40&&grown.title.top+grown.title.height<=canvas.height-12);
+ const narrow=draw(source,{title:'X',titleWidth:24,titleHeight:24,titleFontSize:160});
+ assert.ok(narrow.title.width>=108&&narrow.title.height>24);
+ const lines=draw(source,{title:'CHCl3\nGPC',titleRuns:[{text:'CHCl',script:'normal'},{text:'3',script:'sub'},{text:'\nGPC',script:'normal'}],titleWidth:120,titleHeight:24,titleFontSize:96,titleOffsetX:2400,titleOffsetY:6000});
+ assert.ok(lines.title.height>100&&lines.title.left+lines.title.width<=2400-12&&lines.title.top+lines.title.height<=canvas.height-12);
  assert.throws(()=>draw(source,{title:'test',titleWidth:23}),/指定範囲/);
- console.log('PASS: title inside simple graph, independent font/size, box position/size, visibility and invalid-fit rejection');
+ console.log('PASS: title inside simple graph, independent font/size, box position/size, visibility, automatic frame growth and image-edge containment');
 }

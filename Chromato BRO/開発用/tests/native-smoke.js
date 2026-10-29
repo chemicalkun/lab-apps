@@ -642,6 +642,15 @@ pass('Full initial/reset range, visible mode/style choices, image actions below 
  check($('graphTitleFormat').value===formats,'Project restores rich title');
  const cv=$('graphCanvas'),count=window.__nativeExportCount||0;window.GPCNativeExport('rich-title.png',await new Promise(resolve=>window.GPCFigure.trimBottom(cv).toBlob(resolve,'image/png')));await wait(()=>(window.__nativeExportCount||0)>count);
  await $('graphCopy').onclick();window.GPCSession.restore(original);
+ const beforeGrowth=window.GPCSession.snapshot();$('graphTitleAutoFit').checked=false;
+ $('graphTitle').value='CHCl3';$('graphTitleWidth').value='120';$('graphTitleHeight').value='24';$('graphTitleSize').value='160';$('graphTitleSize').dispatchEvent(new Event('input'));
+ check(!$('graphSave').disabled&&+$('graphTitleWidth').value>120&&+$('graphTitleHeight').value>24,'Large font automatically expands a manually sized title');
+ check(!$('graphTitleAutoFit').checked,'Growing a frame preserves manual-fit preference');
+ const grownSize=[$('graphTitleWidth').value,$('graphTitleHeight').value];
+ const grownProject={...window.GPC_APP_BRIDGE.projectSnapshot(),workspace:window.GPCSession.workspace()};
+ $('graphTitle').value='other';$('graphTitle').dispatchEvent(new Event('input'));await input('graphProjectInput',[new File([JSON.stringify(grownProject)],'grown-title.json')]);
+ check(JSON.stringify(grownSize)===JSON.stringify([$('graphTitleWidth').value,$('graphTitleHeight').value])&&!$('graphSave').disabled,'Expanded title frame survives project round trip');
+ await $('graphCopy').onclick();window.GPCSession.restore(beforeGrowth);
  pass('Sub/sup selected formatting, inline double-click edit/preview/commit/cancel, compact auto fit and project/export round trip');
 }
 return log.join('\n');

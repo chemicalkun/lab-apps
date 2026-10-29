@@ -164,15 +164,19 @@
     }
     let titleBox=null;
     if(title.trim()){
-      const size=bounded('titleFontSize',54,12,160),boxWidth=bounded('titleWidth',400,24,2200),boxHeight=bounded('titleHeight',100,24,1000);
+      const size=bounded('titleFontSize',54,12,160);let boxWidth=bounded('titleWidth',400,24,2200),boxHeight=bounded('titleHeight',100,24,1000);
       const dx=bounded('titleOffsetX',0,-2400,2400),dy=bounded('titleOffsetY',0,-6000,6000),family=fonts[settings.titleFontFamily??'system'];
       if(!family)throw Error('タイトルのフォントを選択してください。');
-      if(boxHeight>height-24)throw Error('タイトル枠が画像に収まりません。高さを小さくしてください。');
+      const natural=window.GPCTitleText.layout(ctx,title,settings.titleRuns||[],size,family,2200);
+      boxWidth=Math.max(boxWidth,natural.minimumWidth);
+      let layout=window.GPCTitleText.layout(ctx,title,settings.titleRuns||[],size,family,boxWidth);
+      const availableHeight=Math.min(1000,height-24);
+      if(layout.height>availableHeight){boxWidth=Math.max(boxWidth,natural.width);layout=natural;}
+      if(layout.height>availableHeight)throw Error('タイトル全体が画像に収まりません。文章や改行を短くしてください。');
+      boxHeight=Math.min(availableHeight,Math.max(boxHeight,layout.height));
       const defaultX=margin.left+20,defaultY=margin.top+20;
       const x=Math.max(12,Math.min(width-boxWidth-12,defaultX+dx)),y=Math.max(12,Math.min(height-boxHeight-12,defaultY+dy));
       titleBox={left:x,top:y,width:boxWidth,height:boxHeight,offsetX:x-defaultX,offsetY:y-defaultY};
-      const layout=window.GPCTitleText.layout(ctx,title,settings.titleRuns||[],size,family,boxWidth);
-      if(layout.height>boxHeight)throw Error('タイトルが枠に収まりません。枠を広げるか文字サイズを小さくしてください。');
       ctx.save();ctx.beginPath();ctx.rect(x,y,boxWidth,boxHeight);ctx.clip();
       if(settings.titleBorder){ctx.fillStyle='#fff';ctx.fillRect(x,y,boxWidth,boxHeight);ctx.strokeStyle='#304560';ctx.lineWidth=2;ctx.strokeRect(x+1,y+1,boxWidth-2,boxHeight-2);}
       ctx.fillStyle='#172e4e';ctx.textAlign='left';ctx.textBaseline='alphabetic';
