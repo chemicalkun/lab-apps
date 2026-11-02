@@ -333,6 +333,18 @@
     baseline:(start,end)=>{$('graphBaseline').checked=true;$('graphBaseStart').value=start.toFixed(6);$('graphBaseEnd').value=end.toFixed(6);$('graphAutoY').checked=true;render();},
     change:(b,kind)=>{$('graphStart').value=b.xmin;$('graphEnd').value=b.xmax;if(kind==='pan'||!autoNormalize()){$('graphAutoY').checked=false;$('graphYMin').value=b.ymin;$('graphYMax').value=b.ymax;}render();},reset
   });
+  // The canvas is hidden after a failed zoom, so its double-click handler cannot receive events.
+  $('graphEmpty').title='ダブルクリックで全体表示に戻す';
+  $('graphEmpty').addEventListener('dblclick',e=>{
+    if(!source?.datasets.length)return;
+    e.preventDefault();navigation.cancel();reset();
+    // Preserve valid peak selections; discard a bad one only when it prevents recovery.
+    if(!ready&&$('graphMode').value==='normalize'&&($('graphPeakStart').value!==''||$('graphPeakEnd').value!=='')){
+      const peak=[$('graphPeakStart').value,$('graphPeakEnd').value];
+      $('graphPeakStart').value='';$('graphPeakEnd').value='';render();
+      if(!ready){$('graphPeakStart').value=peak[0];$('graphPeakEnd').value=peak[1];render();}
+    }
+  });
   for(const [id,mode] of [['graphDragZoom','zoom'],['graphDragPeak','peak']])$(id).onclick=()=>{navigation.cancel();$('graphDragMode').dataset.mode=mode;for(const button of $('graphDragMode').querySelectorAll('button'))button.setAttribute('aria-pressed',String(button.id===id));};
   $('graphPeakClear').onclick=()=>{$('graphPeakStart').value='';$('graphPeakEnd').value='';$('graphAutoY').checked=true;render();};
   window.addEventListener('gpc-datasets-changed',()=>{

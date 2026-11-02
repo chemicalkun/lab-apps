@@ -21,6 +21,24 @@ check(!$('graphPage').hidden&&!$('graphCanvas').hidden&&$('graphFiles').children
 check($('graphImportStatus').textContent.includes('1ファイル読込完了'),'Visible figure import status');
 check($('graphMode').value==='normalize'&&+$('graphStart').value===0&&+$('graphEnd').value===20,'Default normalized full range');
 check(+$('graphYMin').value===0&&+$('graphYMax').value===150&&+$('graphTickSize').value===42&&+$('graphLabelSize').value===42,'Default scale and 42px fonts');
+{
+ const saved=window.GPCSession.snapshot(),raw=JSON.stringify(window.__GPC_APP_TEST__.state.datasets),mn=window.__GPC_APP_TEST__.results.mn;
+ $('graphAutoNormalize').checked=true;$('graphStart').value='8.6235';$('graphEnd').value='8.6236';$('graphEnd').dispatchEvent(new Event('input'));
+ check($('graphCanvas').hidden&&!$('graphEmpty').hidden&&$('graphEmpty').textContent.includes('測定点'),'Reproduce an overzoomed range containing no measured points');
+ $('graphEmpty').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}));
+ check(!$('graphCanvas').hidden&&!$('graphSave').disabled&&+$('graphStart').value===0&&+$('graphEnd').value===20,'Double-click error area restores full figure and exports');
+ $('graphAutoNormalize').checked=false;$('graphPeakStart').value='8.6235';$('graphPeakEnd').value='8.6236';$('graphPeakEnd').dispatchEvent(new Event('input'));
+ check($('graphCanvas').hidden&&$('graphEmpty').textContent.includes('ピーク範囲内に測定点'),'Reproduce invalid manual normalization peak');
+ $('graphEmpty').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}));
+ check(!$('graphCanvas').hidden&&$('graphPeakStart').value===''&&$('graphPeakEnd').value===''&&!$('graphAutoNormalize').checked,'Recovery clears an unusable peak without changing normalization preference');
+ $('graphPeakStart').value='6';$('graphPeakEnd').value='11';$('graphStart').value='20';$('graphEnd').value='19';$('graphEnd').dispatchEvent(new Event('input'));
+ check($('graphCanvas').hidden,'Reproduce invalid display interval with valid peak');
+ $('graphEmpty').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}));
+ check(!$('graphCanvas').hidden&&$('graphPeakStart').value==='6'&&$('graphPeakEnd').value==='11','Recovery preserves valid manual peak selection');
+ check(JSON.stringify(window.__GPC_APP_TEST__.state.datasets)===raw&&window.__GPC_APP_TEST__.results.mn===mn,'Recovery changes only display settings, not source data or molecular weights');
+ window.GPCSession.restore(saved);
+ pass('Double-click error recovery: overzoom, invalid peak, preserved valid peak and unchanged scientific results');
+}
 const initialNormalized=window.__GPC_GRAPH_TEST__.prepared.datasets[0];
 check(Math.abs(initialNormalized.normalization.s0-.523)<1e-10&&Math.abs(Math.max(...initialNormalized.signal)-100)<1e-10,'Native CRM normalized peak');
 check($('graphStyle').value==='simple'&&!$('graphLegend').checked&&$('graphAutoY').checked,'Default horizontal axis only, no legend, automatic whole-curve bounds');
