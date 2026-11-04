@@ -39,6 +39,30 @@ check(+$('graphYMin').value===0&&+$('graphYMax').value===150&&+$('graphTickSize'
  window.GPCSession.restore(saved);
  pass('Double-click error recovery: overzoom, invalid peak, preserved valid peak and unchanged scientific results');
 }
+{
+ check(!$('graphLegendRunNumbers').checked&&!$('graphLegendStripExtension').checked,'Legend naming options default OFF');
+ const original=structuredClone(window.GPCSession.snapshot());
+ await window.GPC_APP_BRIDGE.importFiles([new File([Uint8Array.from(atob(fixtures['41.crm']),c=>c.charCodeAt(0))],'44.crm'),new File([Uint8Array.from(atob(fixtures['41.csv']),c=>c.charCodeAt(0))],'45.csv'),new File([Uint8Array.from(atob(fixtures['41.csv']),c=>c.charCodeAt(0))],'sample.name.csv')]);
+ const samples=()=>window.__GPC_APP_TEST__.state.datasets.map(({name,times,signal})=>({name,times,signal}));
+ const raw=JSON.stringify(samples()),mn=window.__GPC_APP_TEST__.results.mn;
+ const label=name=>window.__GPC_GRAPH_TEST__.prepared.datasets.find(d=>d.name===name).legendName;
+ const toggle=(id,on)=>{$(id).checked=on;$(id).dispatchEvent(new Event('input',{bubbles:true}));};
+ check(label('44.crm')==='44.crm','New imports keep original filename by default');
+ toggle('graphLegendRunNumbers',true);check(label('44.crm')==='run44'&&label('45.csv')==='run45'&&label('sample.name.csv')==='sample.name.csv','Run conversion matches numeric filenames only');
+ toggle('graphLegendStripExtension',true);check(label('44.crm')==='run44'&&label('45.csv')==='run45'&&label('sample.name.csv')==='sample.name','Both switches use run priority and strip other extensions');
+ toggle('graphLegendRunNumbers',false);check(label('44.crm')==='44','Extension-only naming');
+ const row=[...$('graphFiles').children].find(r=>r.querySelector('.file-item').textContent==='44.crm');row.querySelector('.graph-legend-name').value='手動の凡例';row.querySelector('.graph-legend-name').oninput();
+ toggle('graphLegendRunNumbers',true);toggle('graphLegendStripExtension',false);check(label('44.crm')==='手動の凡例','Automatic naming preserves explicit manual labels');
+ const project={...window.GPC_APP_BRIDGE.projectSnapshot(),workspace:window.GPCSession.workspace()};
+ toggle('graphLegendRunNumbers',false);await input('graphProjectInput',[new File([JSON.stringify(project)],'legend-options.json')]);
+ check($('graphLegendRunNumbers').checked&&!$('graphLegendStripExtension').checked&&label('44.crm')==='手動の凡例','Naming options and custom labels survive project round trip');
+ const legacy=window.GPCSession.snapshot();delete legacy.workspace.controls.graphLegendRunNumbers;delete legacy.workspace.controls.graphLegendStripExtension;
+ for(const item of legacy.workspace.figure){delete item.labelCustom;if(item.name!=='44.crm')item.label=item.name;}
+ window.GPCSession.restore(legacy);check(!$('graphLegendRunNumbers').checked&&!$('graphLegendStripExtension').checked&&label('44.crm')==='手動の凡例','Older projects default OFF and preserve manually renamed legends');
+ check(JSON.stringify(samples())===raw&&window.__GPC_APP_TEST__.results.mn===mn,'Legend options do not rename measurements or change numerical results');
+ window.GPCSession.restore(original);
+ pass('Optional run/extension legend naming, combined priority, manual overrides, project persistence and legacy defaults');
+}
 const initialNormalized=window.__GPC_GRAPH_TEST__.prepared.datasets[0];
 check(Math.abs(initialNormalized.normalization.s0-.523)<1e-10&&Math.abs(Math.max(...initialNormalized.signal)-100)<1e-10,'Native CRM normalized peak');
 check($('graphStyle').value==='simple'&&!$('graphLegend').checked&&$('graphAutoY').checked,'Default horizontal axis only, no legend, automatic whole-curve bounds');

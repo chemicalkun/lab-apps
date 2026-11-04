@@ -61,11 +61,14 @@
     };
   }
   $('graphTitleFit').onclick=()=>{$('graphTitleAutoFit').checked=true;render();window.dispatchEvent(new Event('gpc-state-changed'));};
+  function syncLegendNames(){
+    for(const [name,style] of styles)if(!style.labelCustom)style.label=window.GPCFigureData.legendName(name,{runNumbers:$('graphLegendRunNumbers').checked,stripExtension:$('graphLegendStripExtension').checked});
+  }
   function readSource(){
     source=window.GPC_APP_BRIDGE.getGraphData();
     const names=new Set(source.datasets.map(d=>d.name));
     for(const name of styles.keys())if(!names.has(name))styles.delete(name);
-    for(const d of source.datasets)if(!styles.has(d.name))styles.set(d.name,{visible:true,color:d.color,shift:0,label:d.name});
+    for(const d of source.datasets)if(!styles.has(d.name))styles.set(d.name,{visible:true,color:d.color,shift:0,label:d.name,labelCustom:false});
     const selectedName=source.datasets[source.selected]?.name,rank=new Map([...styles.keys()].map((name,i)=>[name,i]));
     source.datasets=source.datasets.map((d,i)=>({...d,sourceIndex:i})).sort((a,b)=>rank.get(a.name)-rank.get(b.name));
     source.selected=source.datasets.findIndex(d=>d.name===selectedName);
@@ -77,6 +80,7 @@
     readSource();render();window.dispatchEvent(new Event('gpc-state-changed'));
   }
   function fileList(){
+    syncLegendNames();
     $('graphRemoveAll').disabled=!source?.datasets.length;
     $('graphFiles').replaceChildren();
     for(const [i,d] of (source?.datasets||[]).entries()){
@@ -97,7 +101,7 @@
       const shiftLabel=document.createElement('label');shiftLabel.textContent='y軸移動 '+($('graphMode').value==='normalize'?'[%]':'[信号]');const shift=document.createElement('input');shift.type='number';shift.step='any';shift.className='input graph-shift';shift.value=style.shift;shift.setAttribute('aria-label',d.name+'のy軸移動量');shift.oninput=()=>{style.shift=shift.valueAsNumber;render();};shiftLabel.append(shift);
       controls.append(colorLabel,shiftLabel);row.append(controls);
       const legendLabel=document.createElement('label');legendLabel.className='graph-legend-editor';legendLabel.textContent='凡例名';
-      const legendInput=document.createElement('input');legendInput.type='text';legendInput.className='input graph-legend-name';legendInput.maxLength=100;legendInput.value=style.label??d.name;legendInput.setAttribute('aria-label',d.name+'の凡例名');legendInput.oninput=()=>{style.label=legendInput.value;render();};legendLabel.append(legendInput);row.append(legendLabel);$('graphFiles').append(row);
+      const legendInput=document.createElement('input');legendInput.type='text';legendInput.className='input graph-legend-name';legendInput.maxLength=100;legendInput.value=style.label??d.name;legendInput.setAttribute('aria-label',d.name+'の凡例名');legendInput.oninput=()=>{style.label=legendInput.value;style.labelCustom=true;render();};legendLabel.append(legendInput);row.append(legendLabel);$('graphFiles').append(row);
     }
   }
   function initializeRange(){
@@ -127,6 +131,7 @@
     const overlay=$('graphOverlay').checked;
     $('graphSource').textContent=overlay?`読み込み済み ${source.datasets.length} ファイル`:`選択中：${source.datasets[source.selected]?.name||'—'}`;
     try{
+      syncLegendNames();
       const formattedTitle=titleRuns();
       if(($('graphTitleAutoFit').checked||expandTitle)&&$('graphTitle').value.trim()){
         const size=window.GPCFigure.titleSize(canvas,$('graphTitle').value,formattedTitle,$('graphTitleSize').valueAsNumber,$('graphTitleFont').value);$('graphTitleWidth').value=$('graphTitleAutoFit').checked?size.width:Math.max($('graphTitleWidth').valueAsNumber,size.width);$('graphTitleHeight').value=Math.min(1000,$('graphTitleAutoFit').checked?size.height:Math.max($('graphTitleHeight').valueAsNumber,size.height));
@@ -238,6 +243,7 @@
   });
   function resetLegend(){$('graphLegendX').value='0';$('graphLegendY').value='0';render();}
   $('graphLegendReset').onclick=resetLegend;
+  for(const id of ['graphLegendRunNumbers','graphLegendStripExtension'])$(id).addEventListener('input',()=>{fileList();render();});
   legendHandle.addEventListener('dblclick',resetLegend);
   legendHandle.addEventListener('pointerdown',e=>{
     if(e.button!==0||!frame?.legend)return;
@@ -323,7 +329,7 @@
     const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
     window.GPCNativeExport?.('GPC_figure.csv',new Blob([csv],{type:'text/csv;charset=utf-8'}));
   };
-  window.GPCFigureSession={snapshot:()=>[...styles].map(([name,s])=>({name,...s,shift:Number.isFinite(s.shift)?s.shift:null})),validate:entries=>{if(!Array.isArray(entries)||entries.length>10000||entries.some(s=>typeof s.name!=='string'||typeof s.visible!=='boolean'||(s.label!=null&&(typeof s.label!=='string'||s.label.length>100))||!/^#[0-9a-f]{6}$/i.test(s.color)||(s.shift!==null&&!Number.isFinite(s.shift))))throw Error('保存された概形設定が不正です。');},restore:entries=>{window.GPCFigureSession.validate(entries);styles.clear();for(const s of entries)styles.set(s.name,{visible:s.visible,color:s.color,shift:s.shift===null?NaN:s.shift,label:s.label??s.name});readSource();initialized=!!source.datasets.length;render();}};
+  window.GPCFigureSession={snapshot:()=>[...styles].map(([name,s])=>({name,...s,shift:Number.isFinite(s.shift)?s.shift:null})),validate:entries=>{if(!Array.isArray(entries)||entries.length>10000||entries.some(s=>typeof s.name!=='string'||typeof s.visible!=='boolean'||(s.labelCustom!==undefined&&typeof s.labelCustom!=='boolean')||(s.label!=null&&(typeof s.label!=='string'||s.label.length>100))||!/^#[0-9a-f]{6}$/i.test(s.color)||(s.shift!==null&&!Number.isFinite(s.shift))))throw Error('保存された概形設定が不正です。');},restore:entries=>{window.GPCFigureSession.validate(entries);styles.clear();for(const s of entries)styles.set(s.name,{visible:s.visible,color:s.color,shift:s.shift===null?NaN:s.shift,label:s.label??s.name,labelCustom:s.labelCustom??(s.label!=null&&s.label!==s.name)});readSource();initialized=!!source.datasets.length;render();}};
 
   const navigation=window.GPCPlotInteraction(canvas,{
     mode:()=>$('graphDragMode').dataset.mode,

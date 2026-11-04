@@ -274,6 +274,8 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
         <label><input type="checkbox" id="graphAxes" checked> 軸・数値を表示（詳細表示のみ）</label>
         
         <label><input type="checkbox" id="graphLegend"> ファイル名の凡例を表示</label>
+        <label title="44.crm → run44。数字だけの名前に適用します。"><input type="checkbox" id="graphLegendRunNumbers"> 数字名を「run番号」にする</label>
+        <label title="44.crm → 44。両方ONの数字名はrun表示を優先します。"><input type="checkbox" id="graphLegendStripExtension"> 凡例名から拡張子を除く</label>
       </div><div class="line graph-output"><label>凡例の文字サイズ [px]<input class="input" id="graphLegendSize" type="number" min="12" max="96" value="42" style="width:90px"></label><label>凡例の左右位置 [px]<input class="input" id="graphLegendX" type="number" min="-2400" max="2400" value="0" style="width:100px"></label><label>凡例の上下位置 [px]<input class="input" id="graphLegendY" type="number" min="-1400" max="1400" value="0" style="width:100px"></label><button class="secondary" id="graphLegendReset">凡例の位置を戻す</button></div>
       <p class="hint">表示設定は分子量計算に影響しません。</p>
 <p id="graphSource" class="hint"></p>
@@ -283,7 +285,7 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
 </section>
 <div id="sessionStatus" class="session-error" role="alert" hidden></div>
 <div id="helpPanel" class="help-overlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
-<section class="help-content"><div class="help-heading"><img src="app-icon.png" alt="" width="48" height="48"><div><h2 id="helpTitle">Chromato BRO ヘルプ</h2><span>バージョン 26.11.02 · GPC/SECデータ解析ソフトウェア</span></div><button id="helpClose" class="secondary">閉じる</button></div>
+<section class="help-content"><div class="help-heading"><img src="app-icon.png" alt="" width="48" height="48"><div><h2 id="helpTitle">Chromato BRO ヘルプ</h2><span>バージョン 26.11.04 · GPC/SECデータ解析ソフトウェア</span></div><button id="helpClose" class="secondary">閉じる</button></div>
 <h3>はじめに・画面の切り替え</h3>
 <p>「概形表示」「分子量計算」「検量線作成」を右上のボタンで切り替えます。初期の順序はこの並びです。ボタンを長押し、または右ボタンでドラッグすると並べ替えられます。再起動時は、データと設定を復元して左端の画面を開きます。</p>
 <h3>概形表示：読み込みと重ね合わせ</h3>

@@ -2,7 +2,7 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),bridge=window.GPC_APP_BRIDGE;
- const ids=['graphTitleFormat','graphTitleAutoFit','graphTitleSize','graphTitleFont','graphTitleWidth','graphTitleHeight','graphTitleX','graphTitleY','graphTitleBorder','graphAutoNormalize','graphGuideWidth','graphGuideOpacity','graphPeakStart','graphPeakEnd','analysisTickInterval','graphTickInterval','start','end','baseMode','baseSlope','baseIntercept','baseStart','baseEnd','viewStart','viewEnd','overlay','degree','standards','calANLDetector','calUseStoredMasses','calPeakStart','calPeakEnd','calPeakDirection','graphMode','graphStyle','graphTitle','graphStart','graphEnd','graphOverlay','graphAxes','graphGrid','graphLegend','graphLegendSize','graphLegendX','graphLegendY','graphAxisWidth','graphCurveWidth','graphTickSize','graphLabelSize','graphFont','graphBaseline','graphBaseStart','graphBaseEnd','graphLabelX','graphLabelY','graphAutoY','graphNormStart','graphNormEnd','graphNormChoice','graphNormMethod','graphYMin','graphYMax','graphGuides','graphHorizontalInterval','graphGuideInterval','graphAspect'];
+ const ids=['graphLegendRunNumbers','graphLegendStripExtension','graphTitleFormat','graphTitleAutoFit','graphTitleSize','graphTitleFont','graphTitleWidth','graphTitleHeight','graphTitleX','graphTitleY','graphTitleBorder','graphAutoNormalize','graphGuideWidth','graphGuideOpacity','graphPeakStart','graphPeakEnd','analysisTickInterval','graphTickInterval','start','end','baseMode','baseSlope','baseIntercept','baseStart','baseEnd','viewStart','viewEnd','overlay','degree','standards','calANLDetector','calUseStoredMasses','calPeakStart','calPeakEnd','calPeakDirection','graphMode','graphStyle','graphTitle','graphStart','graphEnd','graphOverlay','graphAxes','graphGrid','graphLegend','graphLegendSize','graphLegendX','graphLegendY','graphAxisWidth','graphCurveWidth','graphTickSize','graphLabelSize','graphFont','graphBaseline','graphBaseStart','graphBaseEnd','graphLabelX','graphLabelY','graphAutoY','graphNormStart','graphNormEnd','graphNormChoice','graphNormMethod','graphYMin','graphYMax','graphGuides','graphHorizontalInterval','graphGuideInterval','graphAspect'];
  let restoring=true,blocked=false,timer=null,queue=Promise.resolve(),last='';
  function message(text){$('sessionStatus').textContent=text;$('sessionStatus').hidden=!text;}
  function workspace(){return {calibrationLibrary:window.GPCCalibrationLibrary.snapshot(),pageOrder:window.GPCPageOrder.snapshot(),controls:Object.fromEntries(ids.map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value])),draft:window.GPCCalibrationSession.snapshot(),figure:window.GPCFigureSession.snapshot(),page:['navAnalysis','navCalibration','navGraph'].find(id=>$(id).classList.contains('active'))||'navAnalysis'};}
@@ -22,6 +22,7 @@
  }
  function restoreWorkspace(w){
    validateWorkspace(w);
+   for(const id of ['graphLegendRunNumbers','graphLegendStripExtension'])if(!(id in w.controls))$(id).checked=false;
    if(!('graphTitleFormat' in w.controls))$('graphTitleFormat').value='[]';
    for(const id of ['graphPeakStart','graphPeakEnd'])if(!(id in w.controls))$(id).value='';
    if(w.calibrationLibrary!==undefined)window.GPCCalibrationLibrary.restore(w.calibrationLibrary);

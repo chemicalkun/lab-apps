@@ -11,6 +11,7 @@ if(phase==='write'){
  const csvBytes=Uint8Array.from(atob(fixtures['41.csv']),c=>c.charCodeAt(0));await window.GPC_APP_BRIDGE.importFiles([new File([csvBytes],'41.csv')]);window.GPC_APP_BRIDGE.selectDataset(0);$('graphFiles').lastElementChild.querySelector('.file-move-up').click();
  window.GPCPageOrder.restore(['navAnalysis','navGraph','navCalibration']);
  const second=structuredClone(cal);second.name='保持する検量線2';second.coefficients[0]+=.1;window.GPCCalibrationLibrary.remember(cal);window.GPCCalibrationLibrary.remember(second);$('graphTitle').value='GPC(CHCl3)';$('graphTitleAutoFit').checked=false;$('graphTitleFormat').value=JSON.stringify(window.GPCTitleText.format('GPC(CHCl3)',[],8,9,'sub'));$('graphTitleSize').value='60';$('graphTitleFont').value='Times';$('graphTitleWidth').value='1000';$('graphTitleHeight').value='180';$('graphTitleX').value='30';$('graphTitleY').value='40';$('graphAutoNormalize').checked=true;$('graphGuideWidth').value='4';$('graphGuideOpacity').value='80';$('analysisTickInterval').value='2';$('graphTickInterval').value='3';$('graphPeakStart').value='6';$('graphPeakEnd').value='11';
+ $('graphLegendRunNumbers').checked=true;$('graphLegendStripExtension').checked=true;$('graphLegendRunNumbers').dispatchEvent(new Event('input'));
  check(await window.GPCSession.flush(),'Native session save');
  // Project files also carry appearance settings and draft rows.
  window.GPC_APP_BRIDGE.exportProject();await wait(()=>window.__nativeExportNames?.includes('GPC_project.json'));
@@ -23,6 +24,8 @@ if(phase==='draft'){
  return 'PASS: unfinished numeric input survives restart, shows error and remains editable';
 }
 const saved=window.GPCSession.snapshot();
+check($('graphLegendRunNumbers').checked&&$('graphLegendStripExtension').checked,'Legend naming options survive restart');
+check(saved.workspace.figure.find(d=>d.name==='41.crm').label==='試料A'&&saved.workspace.figure.find(d=>d.name==='41.csv').label==='run41','Manual and automatic legend labels survive restart');
 check(JSON.parse($('graphTitleFormat').value).some(r=>r.text==='3'&&r.script==='sub'),'Title subscript survives restart');
 check(saved.workspace.figure[0].name==='41.csv'&&$('graphFiles').firstElementChild.querySelector('.file-item').textContent==='41.csv','Legend and file order survive restart');
 check($('graphTitle').value==='GPC(CHCl3)'&&$('graphTitleSize').value==='60'&&$('graphTitleFont').value==='Times'&&$('graphTitleX').value==='30'&&$('graphAutoNormalize').checked,'Title settings and automatic normalization survive restart');

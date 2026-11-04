@@ -1,6 +1,11 @@
 /* Display-only normalization; never writes to measurement arrays or calibration. */
 (function(root,factory){const api=factory(typeof module==='object'?require('./gpc-core'):root.GPCCore);if(typeof module==='object')module.exports=api;root.GPCFigureData=api;})(typeof window==='object'?window:globalThis,function(C){
  'use strict';
+ function legendName(name,{runNumbers=false,stripExtension=false}={}){
+   const file=String(name??''),match=/^(.+)\.([^./\\]+)$/.exec(file),stem=match?match[1]:file;
+   if(runNumbers&&/^\d+$/.test(stem)&&(!match||/^(crm|csv|txt)$/i.test(match[2])))return 'run'+stem;
+   return stripExtension?stem:file;
+ }
  function displayDataset(d){
    // Only 41.crm is verified against all 6001 points of the original vendor CSV.
    // Preserve legacy analysis arrays. Do not infer offsets for unknown CRM files.
@@ -56,5 +61,5 @@
    if(!datasets.length)throw Error('表示する測定データを選択してください。');
    return {...source,datasets,selected:0,overlay:true};
  }
- return {normalize,displayDataset,prepare};
+ return {normalize,displayDataset,prepare,legendName};
 });
