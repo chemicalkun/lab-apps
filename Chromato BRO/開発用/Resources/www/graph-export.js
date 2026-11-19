@@ -201,6 +201,7 @@
   for(const group of document.querySelectorAll('[data-choice]'))for(const button of group.querySelectorAll('button'))button.onclick=()=>{const control=$(group.dataset.choice);control.value=button.dataset.value;control.dispatchEvent(new Event(group.dataset.choice==='graphMode'?'change':'input'));};
   $('graphRemoveAll').onclick=()=>{window.GPC_APP_BRIDGE.removeAllDatasets();$('graphImportStatus').textContent='全ての測定データを一覧から削除しました。';};
   $('graphChooseFile').onclick=()=>$('graphFileInput').click();
+  window.GPC_APP_BRIDGE.bindFileDrop($('graphDropTarget'),report=>{$('graphImportStatus').textContent=report.message;$('graphImportStatus').className=report.errors.length?'error':'hint';});
   $('graphFileInput').onchange=async e=>{
     if(!e.target.files.length)return;
     $('graphChooseFile').disabled=true;

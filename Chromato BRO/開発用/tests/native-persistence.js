@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id),check=(ok,m)=>{if(!ok)throw Error(m);};
 const wait=async f=>{for(let i=0;i<150&&!f();i++)await new Promise(r=>setTimeout(r,20));check(f(),'Timed out');};
 if(phase==='write'){
+ $('analysisCurveWidth').value='3.5';
  const bytes=Uint8Array.from(atob(fixtures['41.crm']),c=>c.charCodeAt(0));
  await window.GPC_APP_BRIDGE.importFiles([new File([bytes],'41.crm')]);
  const cal=window.GPC_APP_BRIDGE.getCalibration();cal.name='再起動テスト検量線';cal.measuredDate='2026-10-01';cal.measuredTime='14:23:45';cal.dateSource='manual';cal.detector='RI';window.GPC_APP_BRIDGE.applyCalibration(cal);
@@ -24,6 +25,7 @@ if(phase==='draft'){
  return 'PASS: unfinished numeric input survives restart, shows error and remains editable';
 }
 const saved=window.GPCSession.snapshot();
+check($('analysisCurveWidth').value==='3.5','Analysis curve width survives restart');
 check($('graphLegendRunNumbers').checked&&$('graphLegendStripExtension').checked,'Legend naming options survive restart');
 check(saved.workspace.figure.find(d=>d.name==='41.crm').label==='試料A'&&saved.workspace.figure.find(d=>d.name==='41.csv').label==='run41','Manual and automatic legend labels survive restart');
 check(JSON.parse($('graphTitleFormat').value).some(r=>r.text==='3'&&r.script==='sub'),'Title subscript survives restart');

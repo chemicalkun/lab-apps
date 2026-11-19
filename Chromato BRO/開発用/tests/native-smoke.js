@@ -40,6 +40,42 @@ check(+$('graphYMin').value===0&&+$('graphYMax').value===150&&+$('graphTickSize'
  pass('Double-click error recovery: overzoom, invalid peak, preserved valid peak and unchanged scientific results');
 }
 {
+ const saved=structuredClone(window.GPCSession.snapshot()),raw=JSON.stringify(window.__GPC_APP_TEST__.state.datasets),mn=result().mn;
+ check($('analysisCurveWidth').value==='1.8','Analysis curve width default');
+ $('navAnalysis').click();
+ const ctx=$('chromChart').getContext('2d'),stroke=ctx.stroke,widths=[];
+ ctx.stroke=function(...args){widths.push(this.lineWidth);return stroke.apply(this,args);};
+ try{$('analysisCurveWidth').value='4.5';$('analysisCurveWidth').dispatchEvent(new Event('input'));}finally{ctx.stroke=stroke;}
+ check(widths.includes(4.5),'Analysis graph immediately draws configured curve width');
+ check(result().mn===mn&&JSON.stringify(window.__GPC_APP_TEST__.state.datasets)===raw,'Line width does not change molecular weights or measurements');
+ const project=structuredClone(window.GPCSession.snapshot());$('analysisCurveWidth').value='2';window.GPCSession.restore(project);
+ check($('analysisCurveWidth').value==='4.5','Line width restored from project');
+ delete project.workspace.controls.analysisCurveWidth;window.GPCSession.restore(project);
+ check($('analysisCurveWidth').value==='1.8','Old projects use default curve width');
+ async function dropOn(id,files){
+  const dt=new DataTransfer();files.forEach(f=>dt.items.add(f));
+  const over=new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:dt});$(id).dispatchEvent(over);
+  check(over.defaultPrevented&&$(id).classList.contains('file-drop-active'),'File drop highlight '+id);
+  const drop=new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt});$(id).dispatchEvent(drop);
+  check(drop.defaultPrevented&&!$(id).classList.contains('file-drop-active'),'Drop handled without navigation '+id);
+ }
+ const crm=Uint8Array.from(atob(fixtures['41.crm']),c=>c.charCodeAt(0)),csv=Uint8Array.from(atob(fixtures['41.csv']),c=>c.charCodeAt(0));
+ await dropOn('analysisDropTarget',[new File([crm],'drop-analysis.crm'),new File([csv],'drop-analysis.csv')]);
+ await wait(()=>window.__GPC_APP_TEST__.state.datasets.some(d=>d.name==='drop-analysis.csv'));
+ check($('analysisPage').hidden===false&&window.__GPC_APP_TEST__.state.datasets.some(d=>d.name==='drop-analysis.crm'),'Analysis graph accepts multiple CRM and CSV files');
+ $('navGraph').click();await dropOn('graphDropTarget',[new File([crm],'drop-figure.crm')]);
+ await wait(()=>[...$('graphFiles').querySelectorAll('.file-item')].some(el=>el.textContent==='drop-figure.crm'));
+ check([...$('graphFiles').querySelectorAll('.file-item')].some(el=>el.textContent==='drop-figure.crm')&&!$('graphCanvas').hidden,'Figure graph accepts files and updates preview/list');
+ await dropOn('graphDropTarget',[new File(['invalid'],'bad.crm')]);await wait(()=>$('graphImportStatus').textContent.includes('bad.crm'));
+ check(!$('graphCanvas').hidden,'Invalid file shows error and preserves existing graph');
+ const dt=new DataTransfer();dt.setData('text/plain','internal reorder');const over=new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:dt});$('graphDropTarget').dispatchEvent(over);
+ check(!over.defaultPrevented&&!$('graphDropTarget').classList.contains('file-drop-active'),'Non-file drag is ignored');
+ check($('releaseOverview').textContent.includes('ver26.11.19')&&$('releaseOverview').textContent.includes('曲線の太さ'),'Help contains current release overview');
+ window.GPCSession.restore(saved);
+ pass('Analysis line width, project/legacy persistence, CRM/CSV graph drops, invalid-file handling and release overview');
+}
+
+{
  check(!$('graphLegendRunNumbers').checked&&!$('graphLegendStripExtension').checked,'Legend naming options default OFF');
  const original=structuredClone(window.GPCSession.snapshot());
  await window.GPC_APP_BRIDGE.importFiles([new File([Uint8Array.from(atob(fixtures['41.crm']),c=>c.charCodeAt(0))],'44.crm'),new File([Uint8Array.from(atob(fixtures['41.csv']),c=>c.charCodeAt(0))],'45.csv'),new File([Uint8Array.from(atob(fixtures['41.csv']),c=>c.charCodeAt(0))],'sample.name.csv')]);

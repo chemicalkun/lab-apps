@@ -143,6 +143,10 @@ function plotFrame(ctx,w,h,bounds,opts={}){
   return {m,pw,ph,X,Y};
 }
 let viewCanvas=null, viewY=null;
+function analysisCurveWidth(){
+  const value=Number($('analysisCurveWidth').value);
+  return Number.isFinite(value)&&value>=.5&&value<=20?value:1.8;
+}
 function drawChrom(){
   const {ctx,w,h}=canvasSetup('chromChart'),d=selected(),r=state.last;
   if(!d){ctx.fillStyle='#788ba4';ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('CRM / CSVファイルを選択してください',w/2,h/2);viewCanvas=null;return;}
@@ -172,7 +176,7 @@ function drawChrom(){
       const t=data.times[i];if((i+1<data.times.length&&data.times[i+1]<xmin)||(i>0&&data.times[i-1]>xmax))continue;
       const x=frame.X(t),y=frame.Y(data.signal[i]);if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
     }
-    ctx.strokeStyle=color;ctx.lineWidth=data===d?1.8:1.0;ctx.globalAlpha=data===d?1:.72;ctx.stroke();ctx.globalAlpha=1;
+    ctx.strokeStyle=color;ctx.lineWidth=analysisCurveWidth();ctx.globalAlpha=data===d?1:.72;ctx.stroke();ctx.globalAlpha=1;
   });
   if(r){
     ctx.beginPath();let moved=false;
@@ -248,13 +252,31 @@ function restoreProject(p,{allowDraft=false}={}){if(p.format!=='GPCA-project-v1'
   $('overlay').checked=options.overlay!==false;viewY=opts.viewY?.slice()||null;refresh();window.dispatchEvent(new Event('gpc-datasets-changed'));setStatus('プロジェクトを復元しました。');
 }
 async function loadProject(file){try{const p=JSON.parse(await file.text());if(p.workspace)window.GPCSession.validateWorkspace(p.workspace);restoreProject(p);if(p.workspace)window.GPCSession.restoreWorkspace(p.workspace);}catch(e){setStatus('プロジェクト読込エラー：'+e.message,true);}}
+// File-only drops share the existing parsers; ignore internal reorder drags.
+function bindFileDrop(target,report){
+  const isFile=e=>Array.from(e.dataTransfer?.types||[]).includes('Files');
+  target.addEventListener('dragover',e=>{
+    if(!isFile(e))return;
+    e.preventDefault();e.dataTransfer.dropEffect='copy';target.classList.add('file-drop-active');
+  });
+  target.addEventListener('dragleave',e=>{
+    if(!target.contains(e.relatedTarget))target.classList.remove('file-drop-active');
+  });
+  target.addEventListener('drop',async e=>{
+    target.classList.remove('file-drop-active');
+    if(!isFile(e))return;
+    e.preventDefault();e.stopPropagation();
+    const result=await importFiles(e.dataTransfer.files);
+    if(report)report(result);
+  });
+  window.addEventListener('dragend',()=>target.classList.remove('file-drop-active'));
+}
 function hook(){
   $('chooseFile').onclick=()=>$('fileInput').click();
   $('fileInput').onchange=async e=>{await importFiles(e.target.files);e.target.value='';};
-  const drop=$('drop');
-  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('on');});
-  drop.addEventListener('dragleave',()=>drop.classList.remove('on'));
-  drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('on');importFiles(e.dataTransfer.files);});
+  bindFileDrop($('drop'));
+  bindFileDrop($('analysisDropTarget'));
+  $('analysisCurveWidth').addEventListener('input',drawChrom);
   for(const id of ['analysisTickInterval','start','end','baseMode','baseSlope','baseIntercept','baseStart','baseEnd','viewStart','viewEnd','overlay']){
     $(id).addEventListener('change',refresh);
   }
@@ -268,7 +290,7 @@ function hook(){
   async function exportChrom(copy){
     if(!selected()){alert('ファイルを読み込んでください。');return;}
     try{
-      const image=window.GPCFigure.trimBottom(window.GPCFigure.create(window.GPC_APP_BRIDGE.getGraphData(),{simple:true,xTickInterval:$('analysisTickInterval').value}));
+      const image=window.GPCFigure.trimBottom(window.GPCFigure.create(window.GPC_APP_BRIDGE.getGraphData(),{simple:true,xTickInterval:$('analysisTickInterval').value,curveWidth:analysisCurveWidth()}));
       const blob=await new Promise((resolve,reject)=>image.toBlob(b=>b?resolve(b):reject(Error('画像を作成できませんでした。')),'image/png'));
       if(copy){await window.GPCCopyImage(blob);setStatus('画像をコピーしました。貼り付け先で ⌘V を押してください。');return;}
       const name=baseName()+'_chromatogram.png';if(window.GPCNativeExport?.(name,blob))return;
@@ -311,7 +333,7 @@ function hook(){
 }
 hook();resetCal();
 // Dedicated calibration page reads/writes the same calibration as the analysis view.
-window.GPC_APP_BRIDGE={projectSnapshot,restoreProject,exportProject,importFiles,removeDataset,removeAllDatasets,selectDataset:(index)=>{if(!Number.isInteger(index)||index<0||index>=state.datasets.length)return;state.selected=index;refresh();window.dispatchEvent(new Event('gpc-datasets-changed'));},getCalibration:()=>structuredClone(state.cal),getGraphData:()=>({yRange:viewY?.slice()||null,datasets:state.datasets.map((d,i)=>({name:d.name,times:d.times.slice(),signal:d.signal.slice(),color:colors[i%colors.length],figurePrefix:d.metadata?.figurePrefix})),selected:state.selected,overlay:$('overlay').checked,start:Number($('viewStart').value),end:Number($('viewEnd').value)}),applyCalibration:(cal)=>{state.cal=structuredClone(cal);$('degree').value=String(cal.degree);$('standards').value=cal.standards.map(([t,m])=>`${t}, ${m}`).join('\n');$('calStatus').textContent=`適用中：${cal.name} / R² ${cal.r2.toFixed(6)}`;refresh();window.dispatchEvent(new Event('gpc-calibration-changed'));},refresh};
+window.GPC_APP_BRIDGE={bindFileDrop,projectSnapshot,restoreProject,exportProject,importFiles,removeDataset,removeAllDatasets,selectDataset:(index)=>{if(!Number.isInteger(index)||index<0||index>=state.datasets.length)return;state.selected=index;refresh();window.dispatchEvent(new Event('gpc-datasets-changed'));},getCalibration:()=>structuredClone(state.cal),getGraphData:()=>({yRange:viewY?.slice()||null,datasets:state.datasets.map((d,i)=>({name:d.name,times:d.times.slice(),signal:d.signal.slice(),color:colors[i%colors.length],figurePrefix:d.metadata?.figurePrefix})),selected:state.selected,overlay:$('overlay').checked,start:Number($('viewStart').value),end:Number($('viewEnd').value)}),applyCalibration:(cal)=>{state.cal=structuredClone(cal);$('degree').value=String(cal.degree);$('standards').value=cal.standards.map(([t,m])=>`${t}, ${m}`).join('\n');$('calStatus').textContent=`適用中：${cal.name} / R² ${cal.r2.toFixed(6)}`;refresh();window.dispatchEvent(new Event('gpc-calibration-changed'));},refresh};
 // Lightweight diagnostics for automated acceptance tests (read-only).
 if(window.GPC_BOOTSTRAP?.testing)window.__GPC_APP_TEST__={get view(){return viewCanvas;},get state(){return state;},get results(){return state.last;},loadBinary:(buf,name)=>{
   const data=C.readCRM(buf,name);state.datasets=[data];state.selected=0;refresh();return data;}};
