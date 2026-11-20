@@ -182,7 +182,7 @@ final class MoleculeDFTDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         }
     }
     @objc private func about() {
-        let alert = NSAlert(); alert.messageText = "Molecule DFT \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.10.0")"
+        let alert = NSAlert(); alert.messageText = "Molecule DFT \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.11.0")"
         alert.informativeText = "構造式から量子化学計算へ\nRDKit · PySCF · geomeTRIC\n\nこのMac上で計算する独立したアプリです。\nChemDrawの公式製品ではありません。"
         alert.runModal()
     }
@@ -195,6 +195,25 @@ final class MoleculeDFTDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             guard let workspace = payload["workspace"] as? [String: Any] else { replyHandler(["ok": false, "error": "復旧データの形式が不正です"], nil); return }
             do { respond(try workspaceStore.save(workspace)) } catch { replyHandler(["ok": false, "error": error.localizedDescription], nil) }
         case "loadWorkspace": respond(workspaceStore.load())
+        case "saveImage", "copyImage":
+            guard let encoded = payload["png"] as? String, encoded.utf8.count <= 30_000_000,
+                  let data = Data(base64Encoded: encoded), data.starts(with: [137,80,78,71,13,10,26,10]),
+                  let bitmap = NSBitmapImageRep(data: data), bitmap.pixelsWide > 0, bitmap.pixelsHigh > 0,
+                  bitmap.pixelsWide <= 4096, bitmap.pixelsHigh <= 4096 else {
+                replyHandler(["ok": false, "error": "PNG画像が不正、または大きすぎます。"], nil); return
+            }
+            if op == "copyImage" {
+                let item = NSPasteboardItem(); item.setData(data, forType: .png)
+                if let tiff = bitmap.tiffRepresentation { item.setData(tiff, forType: .tiff) }
+                NSPasteboard.general.clearContents(); respond(["copied": NSPasteboard.general.writeObjects([item])])
+            } else {
+                let panel = NSSavePanel(); panel.allowedContentTypes = [.png]; panel.nameFieldStringValue = "energy-diagram.png"
+                panel.beginSheetModal(for: window) { answer in
+                    guard answer == .OK, let url = panel.url else { respond(["cancelled": true]); return }
+                    do { try data.write(to: url, options: .atomic); respond(["saved": true]) }
+                    catch { replyHandler(["ok": false, "error": error.localizedDescription], nil) }
+                }
+            }
         case "writeClipboard":
             guard let text = payload["text"] as? String, text.utf8.count <= 5_000_000 else { replyHandler(["ok": false, "error": "クリップボードの内容が大きすぎます"], nil); return }
             let item = NSPasteboardItem()
@@ -347,7 +366,7 @@ final class MoleculeDFTDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private func releaseStatus() -> [String: Any] {
         let team = signingTeam(Bundle.main.bundleURL)
         let notarized = team != nil && (try? runTool("/usr/bin/xcrun", ["stapler", "validate", Bundle.main.bundlePath]).0) == 0
-        return ["version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "2.10.0", "build": Bundle.main.infoDictionary?["CFBundleVersion"] ?? "14",
+        return ["version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "2.11.0", "build": Bundle.main.infoDictionary?["CFBundleVersion"] ?? "15",
                 "distribution": team == nil ? "local" : "developer-id", "teamIdentifier": team ?? "", "notarized": notarized,
                 "updateMode": team == nil ? "unavailable" : "local-signed",
                 "message": team == nil ? "ローカル署名版です。一般配布にはDeveloper ID署名とApple公証が必要です。自動更新先は未設定です。" : "同じ開発元の署名・公証済みアプリを選択して更新できます。自動更新先は未設定です。"]
