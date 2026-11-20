@@ -82,7 +82,7 @@ function refresh(){
   $('baseRange').style.display=$('baseMode').value!=='range'?'none':'grid';
   $('baseCoeffs').style.display=$('baseMode').value!=='manual'?'none':'grid';
   $('datasetTitle').textContent=data?`${data.name} · ${data.metadata.points.toLocaleString()}点 · ${numeric(data.metadata.duration)} min · ${data.format}`:'ファイルを読み込んで解析を開始';
-  $('verification').textContent=data?.format==='CRM'&&!data.reference?'形式・条件の確認が必要':data?'読込済み':'未読込';
+  $('verification').textContent=data?'読込済み':'未読込';
   $('modeInfo').textContent='積分範囲とベースラインを指定してください。';
   if(data){$('readInfo').className='hint';$('readInfo').textContent='';}
   state.last=null;
@@ -107,7 +107,6 @@ function renderNumbers(){
   $('statPeakSignal').textContent=r?numeric(r.peakSignal,3):'—';
   $('statBounds').textContent=r?`${numeric(r.start,3)} — ${numeric(r.end,3)} min`:'—';
   $('statBaseline').textContent=r?(r.baselineRange?`${numeric(r.baselineRange.start,3)} — ${numeric(r.baselineRange.end,3)} min の信号を結ぶ直線`:({endpoints:'積分区間両端の直線',manual:'指定の傾き・切片',zero:'0基準'})[r.baselineType]):'—';
-  $('statExtrap').textContent=r?(r.calibrationExtrapolated?'あり（要注意）':'なし'):'—';
   $('statPoints').textContent=r?numeric(r.curve.length,0):'—';
   $('calR2').textContent=`R² ${Number.isFinite(cal.r2)?cal.r2.toFixed(6):'—'}`;
   const coeff=cal.coefficients;const terms=coeff.map((v,i)=>`${v>=0&&i>0?'+ ':''}${v.toPrecision(6)}${i?'×t'+(i>=2?'^'+i:''):''}`);

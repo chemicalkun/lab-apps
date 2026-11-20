@@ -215,7 +215,7 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
 <section class="card warning-card" id="analysisWarnings" role="status" aria-live="polite"><div class="sectionbody" style="padding-bottom:0"><h2 style="margin-bottom:4px">解析上の注意</h2><div id="notice" class="hint">測定データを読み込んでください。</div></div><div class="results-note" id="errBox" style="display:none"></div></section>
 <div class="twocol">
 <section class="card"><div class="sectionbody"><h2>検量線 <span class="tag" id="calR2">R² —</span></h2><div id="equation" class="equation">log₁₀(M) = ...</div><canvas id="calChart"></canvas><p class="hint" id="calRange">標準試料の保持時間範囲：—</p></div></section>
-<section class="card"><div class="sectionbody"><h2>積分レポート</h2><dl class="statrows"><dt>ファイル</dt><dd id="statFile">—</dd><dt>適用検量線</dt><dd id="statCalibration">—</dd><dt>積分面積（正信号）</dt><dd id="statArea">—</dd><dt>最大ピーク時刻</dt><dd id="statPeakTime">—</dd><dt>最大ピーク信号</dt><dd id="statPeakSignal">—</dd><dt>積分時刻範囲</dt><dd id="statBounds">—</dd><dt>ベースライン</dt><dd id="statBaseline">—</dd><dt>較正曲線の外挿</dt><dd id="statExtrap">—</dd><dt>積分点数</dt><dd id="statPoints">—</dd></dl><div style="margin-top:17px" class="line"><button class="secondary" id="printReport">印刷 / PDF保存</button></div></div></section>
+<section class="card"><div class="sectionbody"><h2>積分レポート</h2><dl class="statrows"><dt>ファイル</dt><dd id="statFile">—</dd><dt>適用検量線</dt><dd id="statCalibration">—</dd><dt>積分面積（正信号）</dt><dd id="statArea">—</dd><dt>最大ピーク時刻</dt><dd id="statPeakTime">—</dd><dt>最大ピーク信号</dt><dd id="statPeakSignal">—</dd><dt>積分時刻範囲</dt><dd id="statBounds">—</dd><dt>ベースライン</dt><dd id="statBaseline">—</dd><dt>積分点数</dt><dd id="statPoints">—</dd></dl><div style="margin-top:17px" class="line"><button class="secondary" id="printReport">印刷 / PDF保存</button></div></div></section>
 </div>
 </main></div>
 <div id="calibrationPage" class="cal-page" hidden>
@@ -286,13 +286,12 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
 </section>
 <div id="sessionStatus" class="session-error" role="alert" hidden></div>
 <div id="helpPanel" class="help-overlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
-<section class="help-content"><div class="help-heading"><img src="app-icon.png" alt="" width="48" height="48"><div><h2 id="helpTitle">Chromato BRO ヘルプ</h2><span>バージョン 26.11.19 · GPC/SECデータ解析ソフトウェア</span></div><button id="helpClose" class="secondary">閉じる</button></div>
+<section class="help-content"><div class="help-heading"><img src="app-icon.png" alt="" width="48" height="48"><div><h2 id="helpTitle">Chromato BRO ヘルプ</h2><span>バージョン 26.11.20 · GPC/SECデータ解析ソフトウェア</span></div><button id="helpClose" class="secondary">閉じる</button></div>
 <section id="releaseOverview" aria-labelledby="releaseOverviewTitle">
-<h3 id="releaseOverviewTitle">今回のアップデート · ver26.11.19</h3>
-<ul><li>分子量計算：グラフ下の「曲線の太さ」で線幅を変更できます。PNG保存・画像コピーとプロジェクト保存にも反映します。</li>
-<li>読み込み：分子量計算・概形表示のグラフ領域へCRM / CSVファイルを直接ドロップできます。複数ファイルの追加にも対応します。</li>
-<li>ヘルプに更新概要を追加しました。</li></ul>
+<h3 id="releaseOverviewTitle">今回のアップデート · ver26.11.20</h3>
+<ul><li>積分レポートの外挿表示を削除し、ファイルの読込状態を「読込済み」に統一しました。</li><li>数値解析処理・測定データ・検量線は変更していません。</li></ul>
 <details><summary>これまでの主な更新</summary><ul>
+<li>ver26.11.19：分子量計算の曲線の太さ調整、グラフ領域へのCRM / CSVドロップ、ヘルプの更新概要を追加しました。</li>
 <li>ver26.11.04：数字名の凡例をrun番号へ変換する設定、拡張子を除く設定を追加しました。両方とも初期OFFです。手入力の凡例名は保持します。</li>
 <li>ver26.11.02：範囲内に測定点がない表示からも、ダブルクリックで全体表示へ戻せるようにしました。</li>
 <li>ver26.10.27：左側の設定欄のスクロールと表示領域を改善しました。</li>
@@ -320,7 +319,7 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
 <p>プロジェクトJSONには測定データ、重ね合わせ、色、順番、基準範囲、タイトルの文字装飾、凡例などを保存します。「プロジェクトを開く」で復元できます。分子量計算の保存欄にも同じプロジェクト操作があります。自動保存とは別に、研究記録としてプロジェクトを保存してください。</p>
 <h3>分子量計算</h3>
 <p>CRM / CSVを読み込み、積分範囲とベースライン、適用検量線を設定します。「積分範囲を選択」「ベースライン範囲を選択」を選んでドラッグするか、時刻を入力します。ベースラインは積分範囲の両端を結ぶ方法、独立した始点・終点を結ぶ方法、傾き・切片の入力、0基準から選べます。</p>
-<p>Mn・Mw・Mz・Mpはg/mol、分散度ĐはMw / Mnです。積分レポートで積分区間、ベースライン、適用したPSstandard検量線の測定日時・検出器、外挿の有無を確認できます。結果CSV、分布CSV、PNG、プロジェクトJSONを保存し、印刷 / PDF保存も利用できます。</p>
+<p>Mn・Mw・Mz・Mpはg/mol、分散度ĐはMw / Mnです。積分レポートで積分区間、ベースライン、適用したPSstandard検量線の測定日時・検出器を確認できます。結果CSV、分布CSV、PNG、プロジェクトJSONを保存し、印刷 / PDF保存も利用できます。</p>
 <h3>検量線作成・保存・適用</h3>
 <p>ANLのRI / UVを選び、標準試料の10ピークの保持時間を読み込みます。標準試料名・検量線名・測定日はファイル名から取得します。時刻は推測しません。新しいANLへ読み替えても入力済み分子量は行順で保持するため、各ピークとの対応を確認してください。</p>
 <p>各行の既知分子量を編集し、「使用」で近似に含める点を選択します。行の追加・削除、標準点CSV、測定データのピーク取り込みにも対応します。1〜3次の「検量線を計算」で係数・R²・RMSE・残差を確認し、「この検量線を解析に適用」で反映します。計算・保存だけでは解析の検量線は変わりません。</p>
@@ -334,7 +333,7 @@ button{border-radius:7px!important;transition:none!important;min-height:32px}but
 <p>Macはアプリケーションフォルダへ移動して起動してください。WindowsはZIPを「すべて展開」し、フォルダ全体を保管して中のEXEを起動します。EXEだけを取り出さないでください。更新時はアプリ保存先への書き込み権限が必要です。</p>
 <h3>対応形式と解析上の制約</h3>
 <p>CRM・ANLは確認できたChromato-PRO形式に対応します。未知の形式、チャンネル、時間軸、信号スケールは元ソフト／対応CSVと照合してください。Chromato-PROおよびメーカーの公式製品ではありません。ANLはピーク情報を読み込む形式で、クロマトグラムの波形は表示しません。CSVは保持時間（min）と信号を読み込み、Rt / Concヘッダーにも対応します。</p>
-<p>通常解析は正の補正信号を質量濃度に比例すると仮定した相対分子量です。負信号を0にクリップし、時間幅を考慮して積分します。標準物質、検出器、カラム、溶離液、温度の違いは自動補正されません。初期検量線は測定条件への適合を保証しません。外挿の有無は積分レポートで確認できます。測定条件に合う検量線を適用し、計算不能や非物理的な結果の警告を確認してください。</p>
+<p>通常解析は正の補正信号を質量濃度に比例すると仮定した相対分子量です。負信号を0にクリップし、時間幅を考慮して積分します。標準物質、検出器、カラム、溶離液、温度の違いは自動補正されません。初期検量線は測定条件への適合を保証しません。較正標準の時間範囲を超えると外挿になります。測定条件に合う検量線を適用し、計算不能や非物理的な結果の警告を確認してください。</p>
 <p>解析は端末内で完結し、オフラインで使用できます。インターネット接続はアップデートの確認・ダウンロード時に使用します。</p>
 </section></div>
 <script src="native-export.js"></script>

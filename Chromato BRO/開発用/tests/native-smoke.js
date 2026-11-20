@@ -70,7 +70,7 @@ check(+$('graphYMin').value===0&&+$('graphYMax').value===150&&+$('graphTickSize'
  check(!$('graphCanvas').hidden,'Invalid file shows error and preserves existing graph');
  const dt=new DataTransfer();dt.setData('text/plain','internal reorder');const over=new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:dt});$('graphDropTarget').dispatchEvent(over);
  check(!over.defaultPrevented&&!$('graphDropTarget').classList.contains('file-drop-active'),'Non-file drag is ignored');
- check($('releaseOverview').textContent.includes('ver26.11.19')&&$('releaseOverview').textContent.includes('曲線の太さ'),'Help contains current release overview');
+ check($('releaseOverview').textContent.includes('ver26.11.20')&&$('releaseOverview').textContent.includes('曲線の太さ'),'Help contains current release overview');
  window.GPCSession.restore(saved);
  pass('Analysis line width, project/legacy persistence, CRM/CSV graph drops, invalid-file handling and release overview');
 }
